@@ -18,5 +18,10 @@ module.exports = async (req, res) => {
   await touchKey(key)
   console.log('Sending file', info.file.name)
   // new URL() percent-encodes the filename if the stored URL isn't already
-  res.redirect(302, new URL(info.file.url).href)
+  const location = new URL(info.file.url)
+  if (info.agent.includes('Kindle')) {
+    // Kindle needs the file sent as an attachment or it thinks it's invalid
+    location.searchParams.set('download', '1')
+  }
+  res.redirect(302, location.href)
 }

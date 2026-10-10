@@ -6,7 +6,7 @@
   "outputDirectory": "public",
   "functions": {
     "api/finalize.js": {
-      "includeFiles": "bin/kepubify",
+      "includeFiles": "bin/{kepubify,kindlegen}",
       "maxDuration": 300
     }
   },

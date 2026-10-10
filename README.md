@@ -6,7 +6,7 @@ A self hostable service for sending ebooks to a Kobo or Kindle ereader through t
 
 ### On Vercel
 
-This deployment is set up for sending books to a Kobo. Files go straight from the browser to Vercel Blob, pairing keys live in Redis, and EPUBs are converted with a bundled copy of [Kepubify](https://github.com/pgaskin/kepubify). KindleGen and pdfCropMargins are not available here; MOBI, PDF and other files are sent unprocessed.
+Files go straight from the browser to Vercel Blob and pairing keys live in Redis. EPUBs are converted with bundled copies of [Kepubify](https://github.com/pgaskin/kepubify) for Kobo and KindleGen (to MOBI) for Kindle. pdfCropMargins is not available here; other files are sent unprocessed.
 
 1. Import this repository as a new project at https://vercel.com/new. Keep the default settings; `vercel.json` sets the build.
 2. In the project's **Storage** tab, create a **Blob** store and connect it to the project. This sets `BLOB_READ_WRITE_TOKEN`.

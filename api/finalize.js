@@ -8,8 +8,8 @@ const { put, rename } = require('@vercel/blob')
 const FileType = require('file-type')
 const sanitize = require('sanitize-filename')
 const { getKey, saveKey, trackBlob, deleteBlob, normalizeKey } = require('../lib/store')
-const { TYPE_EPUB, allowedTypes, allowedExtensions, contentTypes, extensionOf } = require('../lib/files')
-const kepubify = require('../lib/kepubify')
+const { TYPE_EPUB, TYPE_MOBI, allowedTypes, allowedExtensions, contentTypes, extensionOf } = require('../lib/files')
+const { kepubify, kindlegen } = require('../lib/convert')
 
 function flash (res, data) {
   console.log(data)
@@ -35,7 +35,7 @@ async function download (url, file) {
 }
 
 // Called by the upload page once the book is in Blob storage. Checks the file,
-// converts it with kepubify if asked, and hands it to the e-reader's key.
+// converts it with kepubify or KindleGen if asked, and hands it to the e-reader's key.
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     res.status(405).send('Method not allowed')
@@ -114,7 +114,25 @@ module.exports = async (req, res) => {
       const pathname = 'books/' + crypto.randomBytes(16).toString('hex') + '/'
       let blob
 
-      if (mimetype === TYPE_EPUB && info.agent.includes('Kobo') && body.kepubify) {
+      if (mimetype === TYPE_EPUB && info.agent.includes('Kindle') && body.kindlegen) {
+        conversion = 'kindlegen'
+        const outfile = path.join(workdir, 'outfile.mobi')
+        filename = filename.replace(/\.kepub\.epub$/i, '.epub').replace(/\.epub$/i, '.mobi')
+        try {
+          await kindlegen(infile, outfile)
+        } catch (err) {
+          await deleteBlob(blobUrl)
+          flash(res, { success: false, message: String(err).replaceAll(workdir + '/', '') })
+          return
+        }
+        blob = await put(pathname + filename, fs.createReadStream(outfile), {
+          access: 'public',
+          addRandomSuffix: false,
+          contentType: TYPE_MOBI,
+          multipart: fs.statSync(outfile).size > 50 * 1024 * 1024
+        })
+        await deleteBlob(blobUrl)
+      } else if (mimetype === TYPE_EPUB && info.agent.includes('Kobo') && body.kepubify) {
         conversion = 'kepubify'
         const outfile = path.join(workdir, 'outfile.kepub.epub')
         filename = filename.replace(/\.kepub\.epub$/i, '.epub').replace(/\.epub$/i, '.kepub.epub')
