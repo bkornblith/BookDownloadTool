@@ -16,7 +16,6 @@
 		<table style="margin: 0 auto;" cellpadding=0 cellspacing=0>
 			<tr><td class="right"><label for="keyinput"><strong>Unique key</strong></label></td><td><input type="text" name="key" id="keyinput" autocomplete="off" pattern="...." placeholder="––––" required style="text-transform: uppercase;" maxlength=4/></td></tr>
 			<tr><td class="right aligntop"><label for="fileinput"><strong>Ebook file</strong></label><br/><em>EPUB, MOBI, PDF,<br/>TXT, CBZ, CBR</em></td><td class="aligntop"><label for="fileinput" id="choosebtn">Choose file</label><input type="file" name="file" id="fileinput" accept=".txt,.epub,.mobi,.pdf,.cbz,.cbr,application/epub+zip,application/epub,application/x-mobipocket-ebook,application/pdf,application/vnd.comicbook+zip,application/vnd.comicbook-rar"/><br/><br/><div id="fileinfo"></div></td></tr>
-			<tr><td class="right"><label for="urlinput"><strong>Send url</strong></label></td><td><input type="url" name="url" id="urlinput" autocomplete="off" style="width: 100%"></td></tr>
 			<tr><td class="right"><input type="checkbox" name="kepubify" id="kepubify" checked /></td><td><label for="kepubify"><strong>Kepubify</strong> <em>Kobo only</em></label></td></tr>
 			<tr><td class="right"><input type="checkbox" name="kindlegen" id="kindlegen" checked /></td><td><label for="kindlegen"><strong>KindleGen</strong> <em>Kindle only</em></label></td></tr>
 			<tr class="center"><td colspan="2"><input type="submit" value="Upload and send" /></td></tr>
@@ -34,7 +33,6 @@ var keyinput = document.getElementById('keyinput')
 var fileinput = document.getElementById('fileinput')
 var fileinputAccept = fileinput.accept.split(',') // cache it
 var fileinfo = document.getElementById('fileinfo')
-var urlinput = document.getElementById('urlinput')
 
 var flashtimer = null
 
@@ -64,9 +62,6 @@ function handleFlash(flash) {
 		}
 		if (flash.key) {
 			keyinput.value = flash.key
-		}
-		if (flash.url) {
-			urlinput.value = flash.url
 		}
 	} else {
 		hideUploadStatus()
@@ -130,7 +125,7 @@ function postJSON(url, data, cb) {
 }
 
 function finalize(data) {
-	handleFlash({ success: true, message: data.blobUrl ? "Processing uploaded file... please wait" : "Sending..." })
+	handleFlash({ success: true, message: "Processing uploaded file... please wait" })
 	postJSON('./api/finalize', data, function (req) {
 		console.log('finalize', req.status, req.responseText)
 		handleFlash({
@@ -147,12 +142,11 @@ uploadform.addEventListener('submit', function (e) {
 	var file = fileinput.files[0]
 	var data = {
 		key: key,
-		url: urlinput.value,
 		kepubify: document.getElementById('kepubify').checked,
 		kindlegen: document.getElementById('kindlegen').checked
 	}
 	if (!file) {
-		finalize(data)
+		handleFlash({ success: false, message: "No file selected" })
 		return false
 	}
 	// The file goes straight from the browser to Vercel Blob storage

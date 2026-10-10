@@ -17,7 +17,6 @@ module.exports = async (req, res) => {
   await touchKey(key)
   res.json({
     alive: new Date(),
-    file: info.file ? { name: info.file.name } : null,
-    urls: info.urls
+    file: info.file ? { name: info.file.name } : null
   })
 }
