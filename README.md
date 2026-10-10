@@ -4,6 +4,18 @@ A self hostable service for sending ebooks to a Kobo or Kindle ereader through t
 
 ## How To Run
 
+### On Vercel
+
+This deployment is set up for sending books to a Kobo. Files go straight from the browser to Vercel Blob, pairing keys live in Redis, and EPUBs are converted with a bundled copy of [Kepubify](https://github.com/pgaskin/kepubify). KindleGen and pdfCropMargins are not available here; MOBI, PDF and other files are sent unprocessed.
+
+1. Import this repository as a new project at https://vercel.com/new. Keep the default settings; `vercel.json` sets the build.
+2. In the project's **Storage** tab, create a **Blob** store and connect it to the project. This sets `BLOB_READ_WRITE_TOKEN`.
+3. In the same tab, add a **Redis** database (Upstash from the Marketplace, free plan) and connect it. This sets `REDIS_URL` (or `KV_URL`, which also works).
+4. Redeploy so the new environment variables are picked up.
+5. Open the deployment URL on the Kobo's browser to get a key, and on your phone or computer to upload.
+
+Keys expire about a minute after the e-reader stops showing them, and uploaded files are deleted within an hour (on the next key generated, plus a daily cleanup cron).
+
 ### On Your Host OS
 
 1. Have Node.js 16 or 20 installed
