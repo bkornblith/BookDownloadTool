@@ -1,7 +1,2 @@
-# The Koa server is for Docker/self-hosting; Vercel uses api/ and public/
-index.js
-static
-uploads
-Dockerfile
-docker-compose.yaml
+# Downloaded during the Vercel build
 bin
