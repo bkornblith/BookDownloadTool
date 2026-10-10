@@ -100,12 +100,21 @@
 			border-color: var(--accent);
 			box-shadow: 0 0 0 4px var(--accent-soft);
 		}
+		.keyhint {
+			min-height: 20px;
+			margin-top: 6px;
+			font-size: 13px;
+			color: var(--muted);
+			text-align: center;
+		}
+		.keyhint.ok { color: var(--ok-text); }
+		.keyhint.bad { color: var(--err-text); }
 		.drop {
 			display: flex;
 			flex-direction: column;
 			align-items: center;
 			gap: 6px;
-			margin-top: 20px;
+			margin-top: 14px;
 			padding: 28px 16px;
 			text-align: center;
 			border: 1.5px dashed var(--border);
@@ -122,7 +131,9 @@
 		.drop span { font-size: 13px; color: var(--muted); }
 		.drop.has-file { border-style: solid; border-color: var(--accent); }
 		#fileinput { display: none; }
-		.options { margin: 20px 0 24px; display: grid; gap: 12px; }
+		.options { margin: 20px 0 0; display: grid; gap: 12px; }
+		.options[hidden] { display: none; }
+		button[type="submit"] { margin-top: 24px; }
 		.toggle {
 			display: flex;
 			align-items: center;
@@ -207,6 +218,7 @@
 	<form id="uploadform" novalidate>
 		<label class="field" for="keyinput">Key</label>
 		<input type="text" name="key" id="keyinput" autocomplete="off" autocapitalize="characters" spellcheck="false" pattern="...." placeholder="••••" maxlength="4" required/>
+		<div id="keyhint" class="keyhint"></div>
 
 		<label class="drop" id="dropzone" for="fileinput">
 			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
@@ -215,9 +227,9 @@
 		</label>
 		<input type="file" name="file" id="fileinput" accept=".txt,.epub,.mobi,.pdf,.cbz,.cbr,application/epub+zip,application/epub,application/x-mobipocket-ebook,application/pdf,application/vnd.comicbook+zip,application/vnd.comicbook-rar"/>
 
-		<div class="options">
-			<label class="toggle"><span>Convert for Kobo<small>Kepubify</small></span><input type="checkbox" name="kepubify" id="kepubify" checked/><span class="switch"></span></label>
-			<label class="toggle"><span>Convert for Kindle<small>KindleGen, EPUB to MOBI</small></span><input type="checkbox" name="kindlegen" id="kindlegen" checked/><span class="switch"></span></label>
+		<div class="options" id="options" hidden>
+			<label class="toggle"><span>Convert for Kobo<small>Kepubify</small></span><input type="checkbox" name="kepubify" id="kepubify"/><span class="switch"></span></label>
+			<label class="toggle"><span>Convert for Kindle<small>KindleGen, EPUB to MOBI</small></span><input type="checkbox" name="kindlegen" id="kindlegen"/><span class="switch"></span></label>
 		</div>
 
 		<button type="submit" id="submitbtn">Send</button>
@@ -319,6 +331,54 @@ fileinput.addEventListener('change', function () {
 dropzone.addEventListener('drop', function (e) {
 	if (e.dataTransfer.files.length) selectFile(e.dataTransfer.files[0])
 }, false)
+
+// Look up which e-reader the key belongs to and switch on its conversion
+var keyhint = document.getElementById('keyhint')
+var kepubifyToggle = document.getElementById('kepubify')
+var kindlegenToggle = document.getElementById('kindlegen')
+var lookedUpKey = null
+
+function setKeyHint(kind, text) {
+	keyhint.className = 'keyhint' + (kind ? ' ' + kind : '')
+	keyhint.textContent = text || ''
+}
+
+var options = document.getElementById('options')
+
+// Kobo and Kindle get their conversion picked automatically; the toggles only
+// show for an e-reader we can't identify.
+function setToggles(device) {
+	kepubifyToggle.checked = device === 'kobo'
+	kindlegenToggle.checked = device === 'kindle'
+	options.hidden = device !== 'other'
+}
+
+function lookUpKey() {
+	var key = keyinput.value.trim().toUpperCase()
+	if (key.length !== 4) {
+		lookedUpKey = null
+		setToggles(null)
+		setKeyHint('', '')
+		return
+	}
+	if (key === lookedUpKey) return
+	lookedUpKey = key
+	xhr('GET', './api/device?key=' + encodeURIComponent(key), function (x) {
+		if (keyinput.value.trim().toUpperCase() !== key) return
+		var data = null
+		try { data = JSON.parse(x.responseText) } catch (err) {}
+		if (x.status !== 200 || !data || !data.device) {
+			setToggles(null)
+			setKeyHint('bad', 'No e-reader is showing this key')
+			return
+		}
+		setToggles(data.device)
+		setKeyHint('ok', data.device === 'kobo' ? 'Kobo found · EPUBs will be converted for Kobo' : (data.device === 'kindle' ? 'Kindle found · EPUBs will be converted to MOBI' : 'E-reader found · choose a conversion below'))
+	})
+}
+
+keyinput.addEventListener('input', lookUpKey, false)
+lookUpKey()
 
 if (isIOS) {
 	// Can't accept .mobi files otherwise (iOS thinks it's an unknown type)
