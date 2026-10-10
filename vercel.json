@@ -20,7 +20,6 @@
       "destination": "/download.html"
     },
     { "source": "/", "destination": "/upload.html" },
-    { "source": "/receive", "destination": "/download.html" },
     { "source": "/generate", "destination": "/api/generate" },
     { "source": "/status/:key", "destination": "/api/status?key=:key" },
     {
