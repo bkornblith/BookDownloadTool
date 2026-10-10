@@ -8,7 +8,7 @@ const { put, rename } = require('@vercel/blob')
 const FileType = require('file-type')
 const sanitize = require('sanitize-filename')
 const { getKey, saveKey, trackBlob, deleteBlob, normalizeKey } = require('../lib/store')
-const { TYPE_EPUB, allowedTypes, allowedExtensions, contentTypes, extensionOf, doTransliterate } = require('../lib/files')
+const { TYPE_EPUB, allowedTypes, allowedExtensions, contentTypes, extensionOf } = require('../lib/files')
 const kepubify = require('../lib/kepubify')
 
 function flash (res, data) {
@@ -105,9 +105,6 @@ module.exports = async (req, res) => {
         return
       }
 
-      if (body.transliteration) {
-        filename = sanitize(doTransliterate(filename))
-      }
       if (info.agent.includes('Kindle')) {
         filename = filename.replace(/[^\.\w\-"'\(\)]/g, '_')
       }
