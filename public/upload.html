@@ -131,7 +131,9 @@
 		.drop span { font-size: 13px; color: var(--muted); }
 		.drop.has-file { border-style: solid; border-color: var(--accent); }
 		#fileinput { display: none; }
-		.options { margin: 20px 0 24px; display: grid; gap: 12px; }
+		.options { margin: 20px 0 0; display: grid; gap: 12px; }
+		.options[hidden] { display: none; }
+		button[type="submit"] { margin-top: 24px; }
 		.toggle {
 			display: flex;
 			align-items: center;
@@ -225,7 +227,7 @@
 		</label>
 		<input type="file" name="file" id="fileinput" accept=".txt,.epub,.mobi,.pdf,.cbz,.cbr,application/epub+zip,application/epub,application/x-mobipocket-ebook,application/pdf,application/vnd.comicbook+zip,application/vnd.comicbook-rar"/>
 
-		<div class="options">
+		<div class="options" id="options" hidden>
 			<label class="toggle"><span>Convert for Kobo<small>Kepubify</small></span><input type="checkbox" name="kepubify" id="kepubify"/><span class="switch"></span></label>
 			<label class="toggle"><span>Convert for Kindle<small>KindleGen, EPUB to MOBI</small></span><input type="checkbox" name="kindlegen" id="kindlegen"/><span class="switch"></span></label>
 		</div>
@@ -341,9 +343,14 @@ function setKeyHint(kind, text) {
 	keyhint.textContent = text || ''
 }
 
+var options = document.getElementById('options')
+
+// Kobo and Kindle get their conversion picked automatically; the toggles only
+// show for an e-reader we can't identify.
 function setToggles(device) {
 	kepubifyToggle.checked = device === 'kobo'
 	kindlegenToggle.checked = device === 'kindle'
+	options.hidden = device !== 'other'
 }
 
 function lookUpKey() {
@@ -366,7 +373,7 @@ function lookUpKey() {
 			return
 		}
 		setToggles(data.device)
-		setKeyHint('ok', data.device === 'kobo' ? 'Kobo found' : (data.device === 'kindle' ? 'Kindle found' : 'E-reader found'))
+		setKeyHint('ok', data.device === 'kobo' ? 'Kobo found · EPUBs will be converted for Kobo' : (data.device === 'kindle' ? 'Kindle found · EPUBs will be converted to MOBI' : 'E-reader found · choose a conversion below'))
 	})
 }
 
