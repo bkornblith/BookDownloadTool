@@ -45,149 +45,133 @@ module.exports = async (req, res) => {
   const key = normalizeKey(body.key)
   const blobUrl = body.blobUrl || null
 
-  if (blobUrl && !isUploadForKey(blobUrl, key)) {
+  if (!blobUrl) {
+    flash(res, { message: 'No file selected', success: false })
+    return
+  }
+  if (!isUploadForKey(blobUrl, key)) {
     flash(res, { message: 'Invalid upload', success: false })
     return
   }
 
   const info = await getKey(key)
   if (!info) {
-    if (blobUrl) await deleteBlob(blobUrl)
+    await deleteBlob(blobUrl)
     flash(res, { message: 'Unknown key ' + key, success: false })
     return
-  }
-
-  let url = null
-  if (body.url) {
-    url = String(body.url).trim()
-    if (url.length > 0 && !info.urls.includes(url)) {
-      info.urls.push(url)
-    }
   }
 
   let conversion = null
   let filename = ''
 
-  if (blobUrl) {
-    const workdir = fs.mkdtempSync(path.join(os.tmpdir(), 'upload-'))
-    try {
-      filename = sanitize(String(body.filename || ''))
-      const ext = extensionOf(filename)
-      if (!allowedExtensions.includes(ext)) {
-        await deleteBlob(blobUrl)
-        flash(res, { message: 'Invalid filetype: ' + filename, success: false })
-        return
-      }
-
-      const infile = path.join(workdir, 'infile.' + ext)
-      await download(blobUrl, infile)
-
-      if (fs.statSync(infile).size === 0) {
-        await deleteBlob(blobUrl)
-        flash(res, { message: 'Invalid file submitted (empty file)', success: false })
-        return
-      }
-
-      let mimetype = body.mimetype || 'application/octet-stream'
-      const type = await FileType.fromFile(infile)
-      if ((mimetype === 'application/octet-stream' || mimetype === '') && type) {
-        mimetype = type.mime
-      }
-      if (mimetype === 'application/epub') {
-        mimetype = TYPE_EPUB
-      }
-      if ((!type || !allowedTypes.includes(type.mime)) && !allowedTypes.includes(mimetype)) {
-        await deleteBlob(blobUrl)
-        flash(res, {
-          message: 'Uploaded file is of an invalid type: ' + filename + ' (' + (type ? type.mime : 'unknown mimetype') + ')',
-          success: false
-        })
-        return
-      }
-
-      if (info.agent.includes('Kindle')) {
-        filename = filename.replace(/[^\.\w\-"'\(\)]/g, '_')
-      }
-
-      // A random folder keeps the public Blob URL unguessable while the file
-      // keeps its real name for the e-reader.
-      const pathname = 'books/' + crypto.randomBytes(16).toString('hex') + '/'
-      let blob
-
-      if (mimetype === TYPE_EPUB && info.agent.includes('Kindle') && body.kindlegen) {
-        conversion = 'kindlegen'
-        const outfile = path.join(workdir, 'outfile.mobi')
-        filename = filename.replace(/\.kepub\.epub$/i, '.epub').replace(/\.epub$/i, '.mobi')
-        try {
-          await kindlegen(infile, outfile)
-        } catch (err) {
-          await deleteBlob(blobUrl)
-          flash(res, { success: false, message: String(err).replaceAll(workdir + '/', '') })
-          return
-        }
-        blob = await put(pathname + filename, fs.createReadStream(outfile), {
-          access: 'public',
-          addRandomSuffix: false,
-          contentType: TYPE_MOBI,
-          multipart: fs.statSync(outfile).size > 50 * 1024 * 1024
-        })
-        await deleteBlob(blobUrl)
-      } else if (mimetype === TYPE_EPUB && info.agent.includes('Kobo') && body.kepubify) {
-        conversion = 'kepubify'
-        const outfile = path.join(workdir, 'outfile.kepub.epub')
-        filename = filename.replace(/\.kepub\.epub$/i, '.epub').replace(/\.epub$/i, '.kepub.epub')
-        try {
-          await kepubify(infile, outfile)
-        } catch (err) {
-          await deleteBlob(blobUrl)
-          flash(res, { success: false, message: String(err).replaceAll(workdir + '/', '') })
-          return
-        }
-        blob = await put(pathname + filename, fs.createReadStream(outfile), {
-          access: 'public',
-          addRandomSuffix: false,
-          contentType: TYPE_EPUB,
-          multipart: fs.statSync(outfile).size > 50 * 1024 * 1024
-        })
-        await deleteBlob(blobUrl)
-      } else {
-        filename = filename.replace(/\.epub$/i, '.epub').replace(/\.pdf$/i, '.pdf')
-        blob = await rename(blobUrl, pathname + filename, {
-          access: 'public',
-          addRandomSuffix: false,
-          contentType: contentTypes[extensionOf(filename)] || mimetype
-        })
-      }
-      await trackBlob(blob.url)
-
-      if (info.file) {
-        await deleteBlob(info.file.url)
-      }
-      info.file = {
-        name: filename,
-        url: blob.url,
-        uploaded: new Date().toISOString()
-      }
-    } finally {
-      fs.rmSync(workdir, { recursive: true, force: true })
+  const workdir = fs.mkdtempSync(path.join(os.tmpdir(), 'upload-'))
+  try {
+    filename = sanitize(String(body.filename || ''))
+    const ext = extensionOf(filename)
+    if (!allowedExtensions.includes(ext)) {
+      await deleteBlob(blobUrl)
+      flash(res, { message: 'Invalid filetype: ' + filename, success: false })
+      return
     }
+
+    const infile = path.join(workdir, 'infile.' + ext)
+    await download(blobUrl, infile)
+
+    if (fs.statSync(infile).size === 0) {
+      await deleteBlob(blobUrl)
+      flash(res, { message: 'Invalid file submitted (empty file)', success: false })
+      return
+    }
+
+    let mimetype = body.mimetype || 'application/octet-stream'
+    const type = await FileType.fromFile(infile)
+    if ((mimetype === 'application/octet-stream' || mimetype === '') && type) {
+      mimetype = type.mime
+    }
+    if (mimetype === 'application/epub') {
+      mimetype = TYPE_EPUB
+    }
+    if ((!type || !allowedTypes.includes(type.mime)) && !allowedTypes.includes(mimetype)) {
+      await deleteBlob(blobUrl)
+      flash(res, {
+        message: 'Uploaded file is of an invalid type: ' + filename + ' (' + (type ? type.mime : 'unknown mimetype') + ')',
+        success: false
+      })
+      return
+    }
+
+    if (info.agent.includes('Kindle')) {
+      filename = filename.replace(/[^\.\w\-"'\(\)]/g, '_')
+    }
+
+    // A random folder keeps the public Blob URL unguessable while the file
+    // keeps its real name for the e-reader.
+    const pathname = 'books/' + crypto.randomBytes(16).toString('hex') + '/'
+    let blob
+
+    if (mimetype === TYPE_EPUB && info.agent.includes('Kindle') && body.kindlegen) {
+      conversion = 'kindlegen'
+      const outfile = path.join(workdir, 'outfile.mobi')
+      filename = filename.replace(/\.kepub\.epub$/i, '.epub').replace(/\.epub$/i, '.mobi')
+      try {
+        await kindlegen(infile, outfile)
+      } catch (err) {
+        await deleteBlob(blobUrl)
+        flash(res, { success: false, message: String(err).replaceAll(workdir + '/', '') })
+        return
+      }
+      blob = await put(pathname + filename, fs.createReadStream(outfile), {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: TYPE_MOBI,
+        multipart: fs.statSync(outfile).size > 50 * 1024 * 1024
+      })
+      await deleteBlob(blobUrl)
+    } else if (mimetype === TYPE_EPUB && info.agent.includes('Kobo') && body.kepubify) {
+      conversion = 'kepubify'
+      const outfile = path.join(workdir, 'outfile.kepub.epub')
+      filename = filename.replace(/\.kepub\.epub$/i, '.epub').replace(/\.epub$/i, '.kepub.epub')
+      try {
+        await kepubify(infile, outfile)
+      } catch (err) {
+        await deleteBlob(blobUrl)
+        flash(res, { success: false, message: String(err).replaceAll(workdir + '/', '') })
+        return
+      }
+      blob = await put(pathname + filename, fs.createReadStream(outfile), {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: TYPE_EPUB,
+        multipart: fs.statSync(outfile).size > 50 * 1024 * 1024
+      })
+      await deleteBlob(blobUrl)
+    } else {
+      filename = filename.replace(/\.epub$/i, '.epub').replace(/\.pdf$/i, '.pdf')
+      blob = await rename(blobUrl, pathname + filename, {
+        access: 'public',
+        addRandomSuffix: false,
+        contentType: contentTypes[extensionOf(filename)] || mimetype
+      })
+    }
+    await trackBlob(blob.url)
+
+    if (info.file) {
+      await deleteBlob(info.file.url)
+    }
+    info.file = {
+      name: filename,
+      url: blob.url,
+      uploaded: new Date().toISOString()
+    }
+  } finally {
+    fs.rmSync(workdir, { recursive: true, force: true })
   }
 
   await saveKey(key, info)
 
-  const messages = []
-  if (blobUrl) {
-    messages.push('Upload successful! ' + (conversion ? 'Ebook was converted with ' + conversion + ' and sent' : 'Sent') + ' to ' + (info.agent.includes('Kobo') ? 'a Kobo device.' : (info.agent.includes('Kindle') ? 'a Kindle device.' : 'a device.')))
-    messages.push('Filename: ' + filename)
-  }
-  if (url) {
-    messages.push('Added url: ' + url)
-  }
-
-  if (messages.length === 0) {
-    flash(res, { message: 'No file or url selected', success: false })
-    return
-  }
-
-  flash(res, { message: messages.join('<br/>'), success: true })
+  const device = info.agent.includes('Kobo') ? 'a Kobo device.' : (info.agent.includes('Kindle') ? 'a Kindle device.' : 'a device.')
+  flash(res, {
+    message: 'Upload successful! ' + (conversion ? 'Ebook was converted with ' + conversion + ' and sent' : 'Sent') + ' to ' + device + '<br/>Filename: ' + filename,
+    success: true
+  })
 }
