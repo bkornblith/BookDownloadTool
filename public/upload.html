@@ -1,28 +1,230 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-	<title>Send to Kobo/Kindle</title>
+	<title>Send to e-reader</title>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-	<link rel="stylesheet" type="text/css" href="./style.css?o"/>
+	<meta name="color-scheme" content="light dark"/>
 	<script src="./common.js"></script>
 	<script src="./upload-client.js"></script>
+	<style>
+		:root {
+			--bg: #f4f4f6;
+			--card: #ffffff;
+			--text: #18181b;
+			--muted: #6b6b76;
+			--border: #e2e2e8;
+			--accent: #4f46e5;
+			--accent-hover: #4338ca;
+			--accent-soft: #eef2ff;
+			--on-accent: #ffffff;
+			--ok-bg: #ecfdf3;
+			--ok-text: #05603a;
+			--err-bg: #fef3f2;
+			--err-text: #b42318;
+		}
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--bg: #0f0f12;
+				--card: #1a1a1f;
+				--text: #f2f2f5;
+				--muted: #9b9ba6;
+				--border: #2c2c34;
+				--accent: #818cf8;
+				--accent-hover: #a5b4fc;
+				--accent-soft: #23233a;
+				--on-accent: #0f0f12;
+				--ok-bg: #0f2a1c;
+				--ok-text: #6ce9a6;
+				--err-bg: #2d1414;
+				--err-text: #fda29b;
+			}
+		}
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 24px 16px;
+			background: var(--bg);
+			color: var(--text);
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+			line-height: 1.5;
+		}
+		.card {
+			width: 100%;
+			max-width: 420px;
+			background: var(--card);
+			border: 1px solid var(--border);
+			border-radius: 20px;
+			padding: 32px 28px;
+			box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.06);
+		}
+		h1 {
+			margin: 0 0 4px;
+			font-size: 24px;
+			font-weight: 650;
+			letter-spacing: -0.02em;
+		}
+		.sub {
+			margin: 0 0 28px;
+			color: var(--muted);
+			font-size: 15px;
+		}
+		label.field {
+			display: block;
+			font-size: 13px;
+			font-weight: 600;
+			color: var(--muted);
+			margin-bottom: 8px;
+		}
+		#keyinput {
+			width: 100%;
+			padding: 14px;
+			font: 600 32px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+			letter-spacing: 0.4em;
+			text-indent: 0.4em;
+			text-align: center;
+			text-transform: uppercase;
+			color: var(--text);
+			background: var(--bg);
+			border: 1px solid var(--border);
+			border-radius: 12px;
+			outline: none;
+			transition: border-color .15s, box-shadow .15s;
+		}
+		#keyinput::placeholder { color: var(--border); }
+		#keyinput:focus {
+			border-color: var(--accent);
+			box-shadow: 0 0 0 4px var(--accent-soft);
+		}
+		.drop {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 6px;
+			margin-top: 20px;
+			padding: 28px 16px;
+			text-align: center;
+			border: 1.5px dashed var(--border);
+			border-radius: 14px;
+			cursor: pointer;
+			transition: border-color .15s, background .15s;
+		}
+		.drop:hover, .drop.dragging {
+			border-color: var(--accent);
+			background: var(--accent-soft);
+		}
+		.drop svg { width: 28px; height: 28px; color: var(--accent); }
+		.drop strong { font-size: 15px; font-weight: 600; }
+		.drop span { font-size: 13px; color: var(--muted); }
+		.drop.has-file { border-style: solid; border-color: var(--accent); }
+		#fileinput { display: none; }
+		.options { margin: 20px 0 24px; display: grid; gap: 12px; }
+		.toggle {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			font-size: 15px;
+			cursor: pointer;
+		}
+		.toggle small { display: block; color: var(--muted); font-size: 13px; }
+		.toggle input { position: absolute; opacity: 0; pointer-events: none; }
+		.switch {
+			flex: none;
+			position: relative;
+			width: 42px;
+			height: 24px;
+			border-radius: 999px;
+			background: var(--border);
+			transition: background .15s;
+		}
+		.switch::after {
+			content: "";
+			position: absolute;
+			top: 3px;
+			left: 3px;
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			background: #fff;
+			box-shadow: 0 1px 2px rgba(0,0,0,.2);
+			transition: transform .15s;
+		}
+		.toggle input:checked + .switch { background: var(--accent); }
+		.toggle input:checked + .switch::after { transform: translateX(18px); }
+		.toggle input:focus-visible + .switch { box-shadow: 0 0 0 4px var(--accent-soft); }
+		button[type="submit"] {
+			width: 100%;
+			padding: 14px;
+			font: inherit;
+			font-size: 16px;
+			font-weight: 600;
+			color: var(--on-accent);
+			background: var(--accent);
+			border: none;
+			border-radius: 12px;
+			cursor: pointer;
+			transition: background .15s, opacity .15s;
+		}
+		button[type="submit"]:hover { background: var(--accent-hover); }
+		button[type="submit"]:disabled { opacity: .6; cursor: default; }
+		.progress {
+			height: 6px;
+			margin-top: 16px;
+			border-radius: 999px;
+			background: var(--border);
+			overflow: hidden;
+			display: none;
+		}
+		.progress div {
+			height: 100%;
+			width: 0;
+			background: var(--accent);
+			transition: width .2s;
+		}
+		#uploadstatus {
+			display: none;
+			margin-top: 16px;
+			padding: 12px 14px;
+			border-radius: 12px;
+			font-size: 14px;
+			white-space: pre-line;
+		}
+		#uploadstatus.info { display: block; background: var(--accent-soft); color: var(--text); }
+		#uploadstatus.success { display: block; background: var(--ok-bg); color: var(--ok-text); }
+		#uploadstatus.error { display: block; background: var(--err-bg); color: var(--err-text); }
+	</style>
 </head>
 <body>
 
-<div class="wrapper">
-	<h1 class="center">Send to Kobo/Kindle</h1>
-	<form id="uploadform">
-		<table style="margin: 0 auto;" cellpadding=0 cellspacing=0>
-			<tr><td class="right"><label for="keyinput"><strong>Unique key</strong></label></td><td><input type="text" name="key" id="keyinput" autocomplete="off" pattern="...." placeholder="––––" required style="text-transform: uppercase;" maxlength=4/></td></tr>
-			<tr><td class="right aligntop"><label for="fileinput"><strong>Ebook file</strong></label><br/><em>EPUB, MOBI, PDF,<br/>TXT, CBZ, CBR</em></td><td class="aligntop"><label for="fileinput" id="choosebtn">Choose file</label><input type="file" name="file" id="fileinput" accept=".txt,.epub,.mobi,.pdf,.cbz,.cbr,application/epub+zip,application/epub,application/x-mobipocket-ebook,application/pdf,application/vnd.comicbook+zip,application/vnd.comicbook-rar"/><br/><br/><div id="fileinfo"></div></td></tr>
-			<tr><td class="right"><input type="checkbox" name="kepubify" id="kepubify" checked /></td><td><label for="kepubify"><strong>Kepubify</strong> <em>Kobo only</em></label></td></tr>
-			<tr><td class="right"><input type="checkbox" name="kindlegen" id="kindlegen" checked /></td><td><label for="kindlegen"><strong>KindleGen</strong> <em>Kindle only</em></label></td></tr>
-			<tr class="center"><td colspan="2"><input type="submit" value="Upload and send" /></td></tr>
-		</table>
-		<div id="uploadstatus"></div>
+<main class="card">
+	<h1>Send to e-reader</h1>
+	<p class="sub">Open this site on your Kobo or Kindle to get a key, then send a book here.</p>
+	<form id="uploadform" novalidate>
+		<label class="field" for="keyinput">Key</label>
+		<input type="text" name="key" id="keyinput" autocomplete="off" autocapitalize="characters" spellcheck="false" pattern="...." placeholder="••••" maxlength="4" required/>
+
+		<label class="drop" id="dropzone" for="fileinput">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+			<strong id="filename">Choose an ebook</strong>
+			<span id="fileinfo">or drop it here · EPUB, MOBI, PDF, TXT, CBZ, CBR</span>
+		</label>
+		<input type="file" name="file" id="fileinput" accept=".txt,.epub,.mobi,.pdf,.cbz,.cbr,application/epub+zip,application/epub,application/x-mobipocket-ebook,application/pdf,application/vnd.comicbook+zip,application/vnd.comicbook-rar"/>
+
+		<div class="options">
+			<label class="toggle"><span>Convert for Kobo<small>Kepubify</small></span><input type="checkbox" name="kepubify" id="kepubify" checked/><span class="switch"></span></label>
+			<label class="toggle"><span>Convert for Kindle<small>KindleGen, EPUB to MOBI</small></span><input type="checkbox" name="kindlegen" id="kindlegen" checked/><span class="switch"></span></label>
+		</div>
+
+		<button type="submit" id="submitbtn">Send</button>
+		<div class="progress" id="progress"><div id="progressbar"></div></div>
+		<div id="uploadstatus" role="status"></div>
 	</form>
-</div>
+</main>
 
 <div id="logs"></div>
 
@@ -32,83 +234,91 @@ var uploadstatus = document.getElementById('uploadstatus')
 var keyinput = document.getElementById('keyinput')
 var fileinput = document.getElementById('fileinput')
 var fileinputAccept = fileinput.accept.split(',') // cache it
+var dropzone = document.getElementById('dropzone')
+var filenameEl = document.getElementById('filename')
 var fileinfo = document.getElementById('fileinfo')
+var submitbtn = document.getElementById('submitbtn')
+var progress = document.getElementById('progress')
+var progressbar = document.getElementById('progressbar')
+var selectedFile = null
 
-var flashtimer = null
-
-function hideUploadStatus() {
-	uploadstatus.style.opacity = 0
-	clearTimeout(flashtimer)
-	flashtimer = setTimeout(function () {
-		uploadstatus.textContent = ''
-		uploadstatus.className = ''
-	}, 500)
+function setStatus(kind, message, html) {
+	uploadstatus.className = kind || ''
+	if (html) uploadstatus.innerHTML = message
+	else uploadstatus.textContent = message || ''
 }
 
-function handleFlash(flash) {
-	// if (!flash) getCookies().flash
-	console.log(flash)
-	clearTimeout(flashtimer)
-	if (flash) {
-		if (flash.message) {
-			if (flash.success) {
-				uploadstatus.className = " success"
-				uploadstatus.innerHTML = flash.message.trim()
-			} else {
-				uploadstatus.className = " error"
-				uploadstatus.textContent = flash.message.trim()
-			}
-			uploadstatus.style.opacity = 1
-		}
-		if (flash.key) {
-			keyinput.value = flash.key
-		}
-	} else {
-		hideUploadStatus()
-	}
-}
-
-// handleFlash()
-
-uploadstatus.addEventListener('click', function () {
-	hideUploadStatus()
-}, false)
-
-
-function fileinputChange () {
-	if (!fileinput.files[0] || fileinput.files.length === 0) {
-		fileinfo.textContent = ''
-		fileinput.value = ''
+function setProgress(fraction) {
+	if (fraction === null) {
+		progress.style.display = 'none'
+		progressbar.style.width = '0'
 		return
 	}
+	progress.style.display = 'block'
+	progressbar.style.width = Math.round(fraction * 100) + '%'
+}
 
-	var filename = fileinput.files[0].name
-	var type = fileinput.files[0].type
-	var found = false
+function setBusy(busy) {
+	submitbtn.disabled = busy
+	submitbtn.textContent = busy ? 'Sending…' : 'Send'
+}
+
+function formatSize(bytes) {
+	if (bytes < 1024 * 1024) return Math.ceil(bytes / 1024) + ' KB'
+	return (bytes / 1024 / 1024).toFixed(1) + ' MB'
+}
+
+function isAccepted(file) {
+	var name = file.name.toLowerCase()
 	for (var i = 0; i < fileinputAccept.length; i++) {
 		var item = fileinputAccept[i]
 		if (item.length > 1 && item[0] == '.') {
-			if (filename.toLowerCase().endsWith(item.toLowerCase())) {
-				found = true
-				break
-			}
-		} else if (type == item) {
-			found = true
-			break
+			if (name.endsWith(item.toLowerCase())) return true
+		} else if (file.type == item) {
+			return true
 		}
 	}
-	if (!found) {
-		alert("Invalid file: " + filename + "\nPlease select another file.")
-		fileinfo.textContent = ''
-		fileinput.value = ''
-		return
-	}
-
-	fileinfo.innerHTML = filename + "<br/>Filesize: " + Math.ceil(fileinput.files[0].size / 1024) + ' kB'
+	return false
 }
 
-fileinput.addEventListener('change', fileinputChange, false)
-fileinputChange()
+function selectFile(file) {
+	setStatus('')
+	if (file && !isAccepted(file)) {
+		setStatus('error', file.name + " isn't a supported ebook file.")
+		file = null
+	}
+	selectedFile = file || null
+	if (selectedFile) {
+		dropzone.classList.add('has-file')
+		filenameEl.textContent = selectedFile.name
+		fileinfo.textContent = formatSize(selectedFile.size) + ' · click to change'
+	} else {
+		dropzone.classList.remove('has-file')
+		filenameEl.textContent = 'Choose an ebook'
+		fileinfo.textContent = 'or drop it here · EPUB, MOBI, PDF, TXT, CBZ, CBR'
+		fileinput.value = ''
+	}
+}
+
+fileinput.addEventListener('change', function () {
+	selectFile(fileinput.files[0])
+}, false)
+
+;['dragenter', 'dragover'].forEach(function (name) {
+	dropzone.addEventListener(name, function (e) {
+		e.preventDefault()
+		dropzone.classList.add('dragging')
+	}, false)
+})
+;['dragleave', 'drop'].forEach(function (name) {
+	dropzone.addEventListener(name, function (e) {
+		e.preventDefault()
+		dropzone.classList.remove('dragging')
+	}, false)
+})
+dropzone.addEventListener('drop', function (e) {
+	if (e.dataTransfer.files.length) selectFile(e.dataTransfer.files[0])
+}, false)
 
 if (isIOS) {
 	// Can't accept .mobi files otherwise (iOS thinks it's an unknown type)
@@ -125,30 +335,40 @@ function postJSON(url, data, cb) {
 }
 
 function finalize(data) {
-	handleFlash({ success: true, message: "Processing uploaded file... please wait" })
+	setStatus('info', 'Processing on the server…')
 	postJSON('./api/finalize', data, function (req) {
 		console.log('finalize', req.status, req.responseText)
-		handleFlash({
-			success: req.status == 200,
-			message: req.responseText || "Upload error - is the key correct?"
-		})
+		setProgress(null)
+		setBusy(false)
+		if (req.status == 200) {
+			setStatus('success', req.responseText, true)
+		} else {
+			setStatus('error', req.responseText || 'Upload error. Is the key correct?')
+		}
 	})
 }
 
 uploadform.addEventListener('submit', function (e) {
-	hideUploadStatus()
 	e.preventDefault()
 	var key = keyinput.value.trim().toUpperCase()
-	var file = fileinput.files[0]
+	var file = selectedFile
+	if (key.length !== 4) {
+		setStatus('error', 'Enter the 4-character key shown on your e-reader.')
+		keyinput.focus()
+		return false
+	}
+	if (!file) {
+		setStatus('error', 'No file selected')
+		return false
+	}
 	var data = {
 		key: key,
 		kepubify: document.getElementById('kepubify').checked,
 		kindlegen: document.getElementById('kindlegen').checked
 	}
-	if (!file) {
-		handleFlash({ success: false, message: "No file selected" })
-		return false
-	}
+	setBusy(true)
+	setProgress(0)
+	setStatus('info', 'Uploading…')
 	// The file goes straight from the browser to Vercel Blob storage
 	var ext = (/\.([^.]+)$/.exec(file.name) || ['', ''])[1].toLowerCase()
 	window.blobUpload('uploads/' + key + '/upload.' + ext, file, {
@@ -157,10 +377,8 @@ uploadform.addEventListener('submit', function (e) {
 		clientPayload: JSON.stringify({ key: key }),
 		multipart: file.size > 50 * 1024 * 1024,
 		onUploadProgress: function (e) {
-			handleFlash({
-				success: true,
-				message: "Uploading file... " + Math.round(e.percentage) + '%'
-			})
+			setProgress(e.percentage / 100)
+			setStatus('info', 'Uploading… ' + Math.round(e.percentage) + '%')
 		}
 	}).then(function (blob) {
 		data.blobUrl = blob.url
@@ -169,16 +387,13 @@ uploadform.addEventListener('submit', function (e) {
 		finalize(data)
 	}, function (err) {
 		console.log('upload error', err)
+		setProgress(null)
+		setBusy(false)
 		var message = String(err && err.message || err)
-		handleFlash({
-			success: false,
-			message: /client token/.test(message) ? "Upload error - is the key correct?" : "Upload error: " + message
-		})
+		setStatus('error', /client token/.test(message) ? 'Upload error. Is the key correct?' : 'Upload error: ' + message)
 	})
 	return false
 }, false)
-
-
 </script>
 </body>
 </html>

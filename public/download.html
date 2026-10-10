@@ -1,44 +1,35 @@
 <!doctype html>
 <html>
 <head>
-	<title>Send to Kobo/Kindle</title>
+	<title>Send to e-reader</title>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-	<link rel="stylesheet" type="text/css" href="./style.css?s"/>
+	<link rel="stylesheet" type="text/css" href="./style.css?v2"/>
 	<script src="./common.js?a"></script>
 </head>
 <body>
 
 <div class="wrapper">
-	<h1 class="center">Send to Kobo/Kindle</h1>
+	<h1>Send to e-reader</h1>
 
-	<div class="center">
-		<div style="font-size: 1.3em;">Unique key:</div>
-		<div id="key">
-			<span id="keyoutput">––––</span>
-			<button id="keygen" title="Generate new key">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-					<path d="M19.146 4.854l-1.489 1.489A8 8 0 1 0 12 20a8.094 8.094 0 0 0 7.371-4.886 1 1 0 1 0-1.842-.779A6.071 6.071 0 0 1 12 18a6 6 0 1 1 4.243-10.243l-1.39 1.39a.5.5 0 0 0 .354.854H19.5A.5.5 0 0 0 20 9.5V5.207a.5.5 0 0 0-.854-.353z"/>
-				</svg>
-			</button>
-		</div>
+	<div class="label">Your key</div>
+	<div id="key">
+		<span id="keyoutput">––––</span>
+		<button id="keygen" title="Generate new key">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+				<path d="M19.146 4.854l-1.489 1.489A8 8 0 1 0 12 20a8.094 8.094 0 0 0 7.371-4.886 1 1 0 1 0-1.842-.779A6.071 6.071 0 0 1 12 18a6 6 0 1 1 4.243-10.243l-1.39 1.39a.5.5 0 0 0 .354.854H19.5A.5.5 0 0 0 20 9.5V5.207a.5.5 0 0 0-.854-.353z"/>
+			</svg>
+		</button>
 	</div>
 
-	<div class="center">
-		<div id="downloads">
-			<br/>
-			<div style="font-size: 1.3em;"><em>Downloads</em></div>
-			<a id="downloadlink" class="downloadlink"></a>
-		</div>
-		<br/>
+	<div id="downloads">
+		<div class="label">Ready to download</div>
+		<a id="downloadlink" class="downloadlink"></a>
 	</div>
-	<hr/>
-	<br/>
-	<div class="center">
-		Visit this on other devices to send ebooks to this ereader:<br/><a id="siteurl">https://send.djazz.se</a><br/>
-		<br/>
-		Created by djazz. Source code on <a href="https://github.com/daniel-j/send2ereader" target="_blank">Github</a><br/>
-		Last updated: 2024-10-20<br/>
+
+	<div class="hint">
+		Open this site on your phone or computer and enter the key to send a book:<br/>
+		<a id="siteurl"></a>
 	</div>
 </div>
 
