@@ -1,2 +1,6 @@
 node_modules
 uploads
+bin
+public/upload-client.js
+.vercel
+.env*

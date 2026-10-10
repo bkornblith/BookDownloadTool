@@ -1,0 +1,32 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "public",
+  "functions": {
+    "api/finalize.js": {
+      "includeFiles": "bin/kepubify",
+      "maxDuration": 300
+    }
+  },
+  "crons": [
+    { "path": "/api/cleanup", "schedule": "0 4 * * *" }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "header", "key": "user-agent", "value": ".*(Kobo|Kindle|[Tt][Oo][Ll][Ii][Nn][Oo]|eReader).*" }],
+      "destination": "/download.html"
+    },
+    { "source": "/", "destination": "/upload.html" },
+    { "source": "/receive", "destination": "/download.html" },
+    { "source": "/generate", "destination": "/api/generate" },
+    { "source": "/status/:key", "destination": "/api/status?key=:key" },
+    {
+      "source": "/:filename",
+      "has": [{ "type": "query", "key": "key" }],
+      "destination": "/api/download?filename=:filename"
+    }
+  ]
+}
