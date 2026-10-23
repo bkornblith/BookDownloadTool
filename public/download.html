@@ -44,8 +44,20 @@ var downloadlink = document.getElementById('downloadlink')
 var siteurl = document.getElementById('siteurl')
 var key = null
 var pollTimer = null
+var pollStarted = 0
+var slowPoll = false
+
+// Check every 5 seconds, then every 15 after 10 minutes to save Blob operations
+function startPolling (interval) {
+	if (pollTimer) clearInterval(pollTimer)
+	pollTimer = setInterval(pollFile, interval)
+}
 
 function pollFile () {
+	if (!slowPoll && Date.now() - pollStarted > 10 * 60 * 1000) {
+		slowPoll = true
+		startPolling(15 * 1000)
+	}
 	if (!key) {
 		keyOutput.textContent = '––––'
 		downloads.style.display = 'none'
@@ -81,13 +93,15 @@ function generateKey () {
 	keyOutput.textContent = '––––'
 	if (pollTimer) clearInterval(pollTimer)
 	downloads.style.display = 'none'
-	xhr('POST', './generate', function (x) {
+	var url = './generate' + (key ? '?old=' + encodeURIComponent(key) : '')
+	xhr('POST', url, function (x) {
 		if (x.responseText !== 'error' && x.status === 200) {
 			key = x.responseText
 			keyOutput.textContent = key
 			downloadlink.href = ''
-			if (pollTimer) clearInterval(pollTimer)
-			pollTimer = setInterval(pollFile, 5 * 1000)
+			pollStarted = Date.now()
+			slowPoll = false
+			startPolling(5 * 1000)
 		} else {
 			key = null
 			keyOutput.textContent = '––––'

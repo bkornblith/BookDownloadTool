@@ -1,4 +1,4 @@
-const { getKey, touchKey, normalizeKey } = require('../lib/store')
+const { getKey, getFile, normalizeKey } = require('../lib/store')
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
@@ -14,9 +14,9 @@ module.exports = async (req, res) => {
     res.status(204).end()
     return
   }
-  await touchKey(key)
+  const file = await getFile(key)
   res.json({
     alive: new Date(),
-    file: info.file ? { name: info.file.name } : null
+    file: file ? { name: file.name } : null
   })
 }

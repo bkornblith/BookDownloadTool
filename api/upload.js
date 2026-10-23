@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
           payload = JSON.parse(clientPayload || '{}')
         } catch (err) {}
         const key = normalizeKey(payload.key)
-        if (!(await getKey(key))) {
+        if (!(await getKey(key, { fresh: true }))) {
           throw new Error('Unknown key ' + key)
         }
         const match = /^uploads\/([A-Z0-9]{4})\/upload\.([a-z]+)$/.exec(pathname)

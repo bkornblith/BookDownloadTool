@@ -4,7 +4,7 @@ const { getKey, normalizeKey } = require('../lib/store')
 // switch on the matching conversion.
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
-  const info = await getKey(normalizeKey(req.query.key))
+  const info = await getKey(normalizeKey(req.query.key), { fresh: true })
   if (!info) {
     res.status(404).json({ error: 'Unknown key' })
     return

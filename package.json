@@ -10,7 +10,6 @@
   "dependencies": {
     "@vercel/blob": "^2.8.1",
     "file-type": "^16.5.4",
-    "redis": "^6.3.0",
     "sanitize-filename": "^1.6.3"
   },
   "devDependencies": {
