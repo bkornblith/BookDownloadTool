@@ -7,7 +7,7 @@ const { pipeline } = require('stream/promises')
 const { put, rename } = require('@vercel/blob')
 const FileType = require('file-type')
 const sanitize = require('sanitize-filename')
-const { getKey, saveKey, trackBlob, deleteBlob, normalizeKey } = require('../lib/store')
+const { getKey, getFile, setFile, deleteBlob, normalizeKey } = require('../lib/store')
 const { TYPE_EPUB, TYPE_MOBI, allowedTypes, allowedExtensions, contentTypes, extensionOf } = require('../lib/files')
 const { kepubify, kindlegen } = require('../lib/convert')
 
@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
     return
   }
 
-  const info = await getKey(key)
+  const info = await getKey(key, { fresh: true })
   if (!info) {
     await deleteBlob(blobUrl)
     flash(res, { message: 'Unknown key ' + key, success: false })
@@ -153,21 +153,14 @@ module.exports = async (req, res) => {
         contentType: contentTypes[extensionOf(filename)] || mimetype
       })
     }
-    await trackBlob(blob.url)
-
-    if (info.file) {
-      await deleteBlob(info.file.url)
-    }
-    info.file = {
-      name: filename,
-      url: blob.url,
-      uploaded: new Date().toISOString()
+    const previous = await getFile(key)
+    await setFile(key, { name: filename, url: blob.url })
+    if (previous && previous.url !== blob.url) {
+      await deleteBlob(previous.url)
     }
   } finally {
     fs.rmSync(workdir, { recursive: true, force: true })
   }
-
-  await saveKey(key, info)
 
   const device = info.agent.includes('Kobo') ? 'a Kobo device.' : (info.agent.includes('Kindle') ? 'a Kindle device.' : 'a device.')
   flash(res, {
