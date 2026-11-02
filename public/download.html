@@ -47,7 +47,7 @@ var pollTimer = null
 var pollStarted = 0
 var slowPoll = false
 
-// Check every 5 seconds, then every 15 after 10 minutes to save Blob operations
+// Check every 5 seconds, then every 15 after 10 minutes
 function startPolling (interval) {
 	if (pollTimer) clearInterval(pollTimer)
 	pollTimer = setInterval(pollFile, interval)

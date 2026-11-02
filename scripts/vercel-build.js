@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 // Build step for Vercel: fetches the kepubify and KindleGen binaries that
-// api/finalize.js bundles, and bundles the Vercel Blob upload client for the upload page.
+// api/finalize.js bundles.
 const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 const { execFileSync } = require('child_process')
-const esbuild = require('esbuild')
 
 const root = path.join(__dirname, '..')
 const kepubifyUrl = 'https://github.com/pgaskin/kepubify/releases/download/v4.0.4/kepubify-linux-64bit'
@@ -47,20 +46,7 @@ async function fetchKindlegen () {
   console.log('Downloaded kindlegen to', target)
 }
 
-async function bundleClient () {
-  await esbuild.build({
-    entryPoints: [path.join(root, 'src', 'upload-client.js')],
-    outfile: path.join(root, 'public', 'upload-client.js'),
-    bundle: true,
-    minify: true,
-    format: 'iife',
-    platform: 'browser',
-    target: ['es2018']
-  })
-  console.log('Bundled public/upload-client.js')
-}
-
-Promise.all([fetchKepubify(), fetchKindlegen(), bundleClient()]).catch((err) => {
+Promise.all([fetchKepubify(), fetchKindlegen()]).catch((err) => {
   console.error(err)
   process.exit(1)
 })
