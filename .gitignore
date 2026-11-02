@@ -1,5 +1,4 @@
 node_modules
 bin
-public/upload-client.js
 .vercel
 .env*

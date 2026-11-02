@@ -1,4 +1,4 @@
-const { getKey, getFile, normalizeKey } = require('../lib/store')
+const { getKey, normalizeKey, cleanupSometimes } = require('../lib/store')
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
@@ -14,9 +14,12 @@ module.exports = async (req, res) => {
     res.status(204).end()
     return
   }
-  const file = await getFile(key)
+  const file = info.file
   res.json({
     alive: new Date(),
     file: file ? { name: file.name } : null
   })
+  // The e-reader polls this, so it doubles as the trigger for deleting books
+  // a few minutes after they were downloaded.
+  await cleanupSometimes()
 }

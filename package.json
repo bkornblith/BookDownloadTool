@@ -8,11 +8,9 @@
   "author": "djazz",
   "license": "MIT",
   "dependencies": {
-    "@vercel/blob": "^2.8.1",
+    "@vercel/functions": "^3.10.5",
     "file-type": "^16.5.4",
+    "pg": "^8.23.1",
     "sanitize-filename": "^1.6.3"
-  },
-  "devDependencies": {
-    "esbuild": "^0.28.2"
   }
 }

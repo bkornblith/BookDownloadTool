@@ -1,12 +1,12 @@
-const { getKey, getFile, normalizeKey } = require('../lib/store')
+const { getKey, normalizeKey, readChunks, markDownloaded } = require('../lib/store')
 
-// The e-reader downloads /<filename>?key=<KEY>; send it on to the file in Blob storage.
+// The e-reader downloads /<filename>?key=<KEY>; stream the book out of Postgres.
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
   const key = normalizeKey(req.query.key)
   const filename = req.query.filename
   const info = await getKey(key)
-  const file = info && await getFile(key)
+  const file = info && info.file
   if (!file || file.name !== filename) {
     res.status(404).send('Not found')
     return
@@ -17,11 +17,31 @@ module.exports = async (req, res) => {
     return
   }
   console.log('Sending file', file.name)
-  // new URL() percent-encodes the filename if the stored URL isn't already
-  const location = new URL(file.url)
+  res.statusCode = 200
+  res.setHeader('Content-Type', file.contentType)
+  res.setHeader('Content-Length', String(file.size))
   if (info.agent.includes('Kindle')) {
     // Kindle needs the file sent as an attachment or it thinks it's invalid
-    location.searchParams.set('download', '1')
+    res.setHeader('Content-Disposition', "attachment; filename*=UTF-8''" + encodeURIComponent(file.name))
   }
-  res.redirect(302, location.href)
+  if (req.method === 'HEAD') {
+    res.end()
+    return
+  }
+  try {
+    await readChunks(file.id, (data) => new Promise((resolve, reject) => {
+      if (res.destroyed) {
+        reject(new Error('Download cancelled'))
+        return
+      }
+      if (res.write(data)) resolve()
+      else res.once('drain', resolve)
+    }))
+    res.end()
+    // Deleted a few minutes from now, in case the e-reader asks again
+    await markDownloaded(file.id)
+  } catch (err) {
+    console.error('Download failed', err)
+    res.destroy(err)
+  }
 }

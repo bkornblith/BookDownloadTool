@@ -1,14 +1,10 @@
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const crypto = require('crypto')
-const { Readable } = require('stream')
-const { pipeline } = require('stream/promises')
-const { put, rename } = require('@vercel/blob')
 const FileType = require('file-type')
 const sanitize = require('sanitize-filename')
-const { getKey, getFile, setFile, deleteBlob, normalizeKey } = require('../lib/store')
-const { TYPE_EPUB, TYPE_MOBI, allowedTypes, allowedExtensions, contentTypes, extensionOf } = require('../lib/files')
+const { getKey, getUpload, readChunks, writeFile, setReady, deleteFile, cleanupSometimes, normalizeKey } = require('../lib/store')
+const { TYPE_EPUB, TYPE_MOBI, allowedTypes, allowedExtensions, contentTypes, chunkSize, extensionOf } = require('../lib/files')
 const { kepubify, kindlegen } = require('../lib/convert')
 
 function flash (res, data) {
@@ -16,25 +12,16 @@ function flash (res, data) {
   res.status(data.success ? 200 : 400).send(data.message)
 }
 
-// Only accept files the browser just uploaded to our Blob store for this key
-function isUploadForKey (blobUrl, key) {
+async function download (id, file) {
+  const fd = fs.openSync(file, 'w')
   try {
-    const url = new URL(blobUrl)
-    return url.protocol === 'https:' &&
-      url.hostname.endsWith('.blob.vercel-storage.com') &&
-      url.pathname.startsWith('/uploads/' + key + '/')
-  } catch (err) {
-    return false
+    await readChunks(id, (data) => { fs.writeSync(fd, data) })
+  } finally {
+    fs.closeSync(fd)
   }
 }
 
-async function download (url, file) {
-  const response = await fetch(url, { cache: 'no-store' })
-  if (!response.ok) throw new Error('Could not read uploaded file: HTTP ' + response.status)
-  await pipeline(Readable.fromWeb(response.body), fs.createWriteStream(file))
-}
-
-// Called by the upload page once the book is in Blob storage. Checks the file,
+// Called by the upload page once all chunks of the book are uploaded. Checks the file,
 // converts it with kepubify or KindleGen if asked, and hands it to the e-reader's key.
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
@@ -43,20 +30,21 @@ module.exports = async (req, res) => {
   }
   const body = req.body || {}
   const key = normalizeKey(body.key)
-  const blobUrl = body.blobUrl || null
+  const upload = await getUpload(body.id)
 
-  if (!blobUrl) {
+  if (!upload) {
     flash(res, { message: 'No file selected', success: false })
     return
   }
-  if (!isUploadForKey(blobUrl, key)) {
+  const uploadId = upload.id
+  if (upload.key !== key || upload.ready) {
     flash(res, { message: 'Invalid upload', success: false })
     return
   }
 
-  const info = await getKey(key, { fresh: true })
+  const info = await getKey(key)
   if (!info) {
-    await deleteBlob(blobUrl)
+    await deleteFile(uploadId)
     flash(res, { message: 'Unknown key ' + key, success: false })
     return
   }
@@ -69,16 +57,16 @@ module.exports = async (req, res) => {
     filename = sanitize(String(body.filename || ''))
     const ext = extensionOf(filename)
     if (!allowedExtensions.includes(ext)) {
-      await deleteBlob(blobUrl)
+      await deleteFile(uploadId)
       flash(res, { message: 'Invalid filetype: ' + filename, success: false })
       return
     }
 
     const infile = path.join(workdir, 'infile.' + ext)
-    await download(blobUrl, infile)
+    await download(uploadId, infile)
 
     if (fs.statSync(infile).size === 0) {
-      await deleteBlob(blobUrl)
+      await deleteFile(uploadId)
       flash(res, { message: 'Invalid file submitted (empty file)', success: false })
       return
     }
@@ -92,7 +80,7 @@ module.exports = async (req, res) => {
       mimetype = TYPE_EPUB
     }
     if ((!type || !allowedTypes.includes(type.mime)) && !allowedTypes.includes(mimetype)) {
-      await deleteBlob(blobUrl)
+      await deleteFile(uploadId)
       flash(res, {
         message: 'Uploaded file is of an invalid type: ' + filename + ' (' + (type ? type.mime : 'unknown mimetype') + ')',
         success: false
@@ -104,10 +92,9 @@ module.exports = async (req, res) => {
       filename = filename.replace(/[^\.\w\-"'\(\)]/g, '_')
     }
 
-    // A random folder keeps the public Blob URL unguessable while the file
-    // keeps its real name for the e-reader.
-    const pathname = 'books/' + crypto.randomBytes(16).toString('hex') + '/'
-    let blob
+    let id = uploadId
+    let size = fs.statSync(infile).size
+    let contentType
 
     if (mimetype === TYPE_EPUB && info.agent.includes('Kindle') && body.kindlegen) {
       conversion = 'kindlegen'
@@ -116,17 +103,14 @@ module.exports = async (req, res) => {
       try {
         await kindlegen(infile, outfile)
       } catch (err) {
-        await deleteBlob(blobUrl)
+        await deleteFile(uploadId)
         flash(res, { success: false, message: String(err).replaceAll(workdir + '/', '') })
         return
       }
-      blob = await put(pathname + filename, fs.createReadStream(outfile), {
-        access: 'public',
-        addRandomSuffix: false,
-        contentType: TYPE_MOBI,
-        multipart: fs.statSync(outfile).size > 50 * 1024 * 1024
-      })
-      await deleteBlob(blobUrl)
+      id = await writeFile(key, fs.createReadStream(outfile, { highWaterMark: 1024 * 1024 }), chunkSize)
+      size = fs.statSync(outfile).size
+      contentType = TYPE_MOBI
+      await deleteFile(uploadId)
     } else if (mimetype === TYPE_EPUB && info.agent.includes('Kobo') && body.kepubify) {
       conversion = 'kepubify'
       const outfile = path.join(workdir, 'outfile.kepub.epub')
@@ -134,31 +118,24 @@ module.exports = async (req, res) => {
       try {
         await kepubify(infile, outfile)
       } catch (err) {
-        await deleteBlob(blobUrl)
+        await deleteFile(uploadId)
         flash(res, { success: false, message: String(err).replaceAll(workdir + '/', '') })
         return
       }
-      blob = await put(pathname + filename, fs.createReadStream(outfile), {
-        access: 'public',
-        addRandomSuffix: false,
-        contentType: TYPE_EPUB,
-        multipart: fs.statSync(outfile).size > 50 * 1024 * 1024
-      })
-      await deleteBlob(blobUrl)
+      id = await writeFile(key, fs.createReadStream(outfile, { highWaterMark: 1024 * 1024 }), chunkSize)
+      size = fs.statSync(outfile).size
+      contentType = TYPE_EPUB
+      await deleteFile(uploadId)
     } else {
       filename = filename.replace(/\.epub$/i, '.epub').replace(/\.pdf$/i, '.pdf')
-      blob = await rename(blobUrl, pathname + filename, {
-        access: 'public',
-        addRandomSuffix: false,
-        contentType: contentTypes[extensionOf(filename)] || mimetype
-      })
+      contentType = contentTypes[extensionOf(filename)] || mimetype
     }
-    const previous = await getFile(key)
-    await setFile(key, { name: filename, url: blob.url })
-    if (previous && previous.url !== blob.url) {
-      await deleteBlob(previous.url)
-    }
+    await setReady(key, id, { name: filename, contentType, size })
+  } catch (err) {
+    await deleteFile(uploadId)
+    throw err
   } finally {
+    await cleanupSometimes()
     fs.rmSync(workdir, { recursive: true, force: true })
   }
 

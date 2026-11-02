@@ -6,7 +6,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 	<meta name="color-scheme" content="light dark"/>
 	<script src="./common.js"></script>
-	<script src="./upload-client.js"></script>
 	<style>
 		:root {
 			--bg: #f4f4f6;
@@ -429,28 +428,57 @@ uploadform.addEventListener('submit', function (e) {
 	setBusy(true)
 	setProgress(0)
 	setStatus('info', 'Uploading…')
-	// The file goes straight from the browser to Vercel Blob storage
-	var ext = (/\.([^.]+)$/.exec(file.name) || ['', ''])[1].toLowerCase()
-	window.blobUpload('uploads/' + key + '/upload.' + ext, file, {
-		access: 'public',
-		handleUploadUrl: './api/upload',
-		clientPayload: JSON.stringify({ key: key }),
-		multipart: file.size > 50 * 1024 * 1024,
-		onUploadProgress: function (e) {
-			setProgress(e.percentage / 100)
-			setStatus('info', 'Uploading… ' + Math.round(e.percentage) + '%')
-		}
-	}).then(function (blob) {
-		data.blobUrl = blob.url
-		data.filename = file.name
-		data.mimetype = file.type
-		finalize(data)
-	}, function (err) {
-		console.log('upload error', err)
+	// Sent in 3 MB pieces, since the server takes at most 4.5 MB per request
+	var chunkSize = 3 * 1024 * 1024
+	var maxSize = 50 * 1024 * 1024
+	function fail(message) {
 		setProgress(null)
 		setBusy(false)
-		var message = String(err && err.message || err)
-		setStatus('error', /client token/.test(message) ? 'Upload error. Is the key correct?' : 'Upload error: ' + message)
+		setStatus('error', message)
+	}
+	if (file.size > maxSize) {
+		fail('This file is too large. Books can be up to 50 MB.')
+		return false
+	}
+	function errorOf(req, fallback) {
+		try { return JSON.parse(req.responseText).error || fallback } catch (err) { return fallback }
+	}
+	function sendChunk(id, seq, tries) {
+		var start = seq * chunkSize
+		if (start >= file.size && seq > 0) {
+			data.id = id
+			data.filename = file.name
+			data.mimetype = file.type
+			finalize(data)
+			return
+		}
+		var req = new XMLHttpRequest()
+		req.open('PUT', './api/upload?id=' + id + '&seq=' + seq, true)
+		req.setRequestHeader('Content-Type', 'application/octet-stream')
+		req.upload.onprogress = function (e) {
+			var fraction = file.size ? Math.min(1, (start + e.loaded) / file.size) : 1
+			setProgress(fraction)
+			setStatus('info', 'Uploading… ' + Math.round(fraction * 100) + '%')
+		}
+		req.onload = function () {
+			if (req.status == 200) sendChunk(id, seq + 1, 0)
+			else if (req.status >= 500 && tries < 2) sendChunk(id, seq, tries + 1)
+			else fail('Upload error: ' + errorOf(req, 'HTTP ' + req.status))
+		}
+		req.onerror = function () {
+			if (tries < 2) sendChunk(id, seq, tries + 1)
+			else fail('Upload error. Check your connection and try again.')
+		}
+		req.send(file.slice(start, start + chunkSize))
+	}
+	postJSON('./api/upload', { key: key }, function (req) {
+		var id = null
+		try { id = JSON.parse(req.responseText).id } catch (err) {}
+		if (req.status != 200 || !id) {
+			fail('Upload error. Is the key correct?')
+			return
+		}
+		sendChunk(id, 0, 0)
 	})
 	return false
 }, false)
