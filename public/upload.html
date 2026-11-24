@@ -206,6 +206,9 @@
 		}
 		#uploadstatus.info { display: block; background: var(--accent-soft); color: var(--text); }
 		#uploadstatus.success { display: block; background: var(--ok-bg); color: var(--ok-text); }
+		.footer { margin: 20px 0 0; font-size: 13px; color: var(--muted); text-align: center; }
+		.footer a { color: var(--muted); }
+		.footer a:hover { color: var(--accent); }
 		#uploadstatus.error { display: block; background: var(--err-bg); color: var(--err-text); }
 	</style>
 </head>
@@ -235,6 +238,7 @@
 		<div class="progress" id="progress"><div id="progressbar"></div></div>
 		<div id="uploadstatus" role="status"></div>
 	</form>
+	<p class="footer"><span id="librarynote" hidden>Logged in · books you send are also added to your Calibre library · </span><a href="/library">Library</a></p>
 </main>
 
 <div id="logs"></div>
@@ -377,6 +381,12 @@ function lookUpKey() {
 }
 
 keyinput.addEventListener('input', lookUpKey, false)
+
+xhr('GET', './api/library/login', function (x) {
+	try {
+		if (JSON.parse(x.responseText).loggedIn) document.getElementById('librarynote').hidden = false
+	} catch (err) {}
+})
 lookUpKey()
 
 if (isIOS) {

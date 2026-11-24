@@ -13,3 +13,18 @@ Everything lives in a Postgres database (Neon's free tier works): the pairing ke
 3. Redeploy so the new environment variables are picked up.
 
 Keys last an hour, or until the e-reader asks for a new one. Books can be up to 50 MB, and are deleted 5 minutes after the e-reader downloads them, or after an hour at most (checked while the e-reader page is open, on each key generated, and by a daily cleanup cron), so the free tier's 0.5 GB is plenty.
+
+## Private library (Calibre)
+
+`/library` is a password-protected page listing your Calibre books, with a Send button for each. It uses the same keys and conversions as the upload page.
+
+- **Login:** one password, set as `LIBRARY_PASSWORD` (at least 8 characters). Logging in lasts 30 days. After 10 wrong passwords in 15 minutes, logins are refused for 15 minutes. Changing the password logs out every browser.
+- **Storage:** library books are kept in an S3-compatible bucket, because Neon's free tier is too small. Cloudflare R2 is free up to 10 GB and doesn't charge for downloads. Set `S3_ENDPOINT` (`https://<account id>.r2.cloudflarestorage.com`), `S3_BUCKET`, `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`. `S3_REGION` defaults to `auto`. Postgres holds the catalogue (`library_books`).
+- **Sync:** `public/calibre-sync/calibre-sync.py` runs on the computer with Calibre. It reads a copy of Calibre's `metadata.db`, so it is safe while Calibre is open. It uploads one file per book (EPUB first, then KEPUB, AZW3, MOBI, AZW, PDF, CBZ, CBR, TXT) when the book is new or its file changed. It updates titles and authors, and removes books that are gone from Calibre. Files go straight to the bucket through signed URLs. On a Mac, install it with:
+
+  ```
+  curl -fsSL https://YOUR-SITE/calibre-sync/install.sh | bash -s -- https://YOUR-SITE
+  ```
+
+  This sets up a background job (`~/Library/LaunchAgents/com.bookdownloadtool.calibre-sync.plist`) that syncs at login, every hour, and a few minutes after Calibre's library changes. The log is in `~/Library/Logs/calibre-sync.log`.
+- **Into Calibre:** when you're logged in, books sent from the upload page are also kept in an inbox. The next sync adds them to Calibre with `calibredb`, which skips books Calibre already has (same title and authors). `calibredb` can't change the library while Calibre is open, so the book then waits for a later sync.
