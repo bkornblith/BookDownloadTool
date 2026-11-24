@@ -16,7 +16,7 @@ Keys last an hour, or until the e-reader asks for a new one. A key holds up to 1
 
 ## Private library (Calibre)
 
-`/library` is a password-protected page listing your Calibre books, with a Send button for each. It uses the same keys and conversions as the upload page.
+The home page has two panels. On the left, anyone can enter an e-reader key and send a file. On the right is your Calibre library, locked until you log in; once logged in you can search it, sort it, tick books and send them together with a file. Files you send while logged in are also added to Calibre. `/library` opens the same page.
 
 - **Login:** one passcode of 6 to 12 digits, chosen on the library page the first time it opens (set it straight after deploying, since until then anyone could choose it). It is stored as a scrypt hash in Postgres and can be changed from the page. Logging in lasts 30 days. After 10 wrong passcodes in 15 minutes, logins are refused for 15 minutes. Changing the passcode logs out every browser. Once logged in, you can add a passkey (Touch ID or Face ID, synced through iCloud Keychain) and then log in with one tap; once a passkey exists the passcode stops working (biometric login only). To recover after losing every passkey, set `LIBRARY_ALLOW_PASSCODE=1` on Vercel, redeploy, log in with the passcode, add a passkey, then remove the variable.
 - **Sync key:** the sync script authenticates with its own 256-bit key, created under Settings on the library page and pasted into the installer. Only its SHA-256 is stored; creating a new one stops the old one.
