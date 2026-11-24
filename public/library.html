@@ -89,9 +89,9 @@
 			text-transform: uppercase;
 		}
 		#keyinput::placeholder { color: var(--border); }
-		.keyhint { min-height: 20px; margin: 6px 0 18px; font-size: 13px; color: var(--muted); text-align: center; }
-		.keyhint.ok { color: var(--ok-text); }
-		.keyhint.bad { color: var(--err-text); }
+		.hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+		.hint.ok { color: var(--ok-text); }
+		.hint.bad { color: var(--err-text); }
 		.primary {
 			width: 100%;
 			margin-top: 16px;
@@ -109,97 +109,84 @@
 		.primary:disabled { opacity: .6; cursor: default; }
 		.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; padding: 0; }
 		input.code { font: 600 22px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.3em; text-align: center; }
-		#login.card, #change.card { max-width: 380px; margin-top: 12vh; }
+		#login.card { max-width: 380px; margin-top: 12vh; }
 		.or { margin: 18px 0 14px; font-size: 13px; color: var(--muted); text-align: center; }
 		.secondary { width: 100%; padding: 12px; font: inherit; font-size: 15px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border: none; border-radius: 12px; cursor: pointer; }
-		.banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); font-size: 14px; }
 		.status { margin-top: 14px; padding: 12px 14px; border-radius: 12px; font-size: 14px; }
 		.status:empty { display: none; }
 		.status.info { background: var(--accent-soft); }
 		.status.success { background: var(--ok-bg); color: var(--ok-text); }
 		.status.error { background: var(--err-bg); color: var(--err-text); }
-		.count { margin: 10px 2px 4px; font-size: 13px; color: var(--muted); }
-		ul.books { list-style: none; margin: 0; padding: 0; }
-		ul.books li {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-			padding: 12px 2px;
-			border-top: 1px solid var(--border);
-		}
-		.book { flex: 1; min-width: 0; }
-		.book strong { display: block; font-size: 15px; font-weight: 600; }
-		.book span { display: block; font-size: 13px; color: var(--muted); }
-		.send {
-			flex: none;
-			padding: 7px 14px;
-			font: inherit;
-			font-size: 14px;
-			font-weight: 600;
-			color: var(--accent);
-			background: var(--accent-soft);
-			border: none;
-			border-radius: 999px;
-			cursor: pointer;
-		}
-		.send:hover:not(:disabled) { color: var(--on-accent); background: var(--accent); }
-		.send:disabled { opacity: .45; cursor: default; }
-		/* Library */
-		#library { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 18px; padding-top: 32px; }
-		#library.wide { max-width: 1120px; }
-		.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-		.bar h1 { margin: 0; font-size: 22px; }
-		.reader { position: relative; }
-		.pill { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 12px; font: inherit; font-size: 14px; font-weight: 500; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 999px; cursor: pointer; white-space: nowrap; }
-		.pill:hover { border-color: var(--accent); }
-		.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); opacity: .5; }
-		.dot.on { background: #16a34a; opacity: 1; }
-		.popover { position: absolute; right: 0; top: 44px; z-index: 10; width: 280px; padding: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,.12); }
-		.hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
-		.hint.ok { color: var(--ok-text); }
-		.hint.bad { color: var(--err-text); }
-		.searchbox { display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 18px; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 16px; transition: border-color .15s, box-shadow .15s; }
+		/* Library: e-reader and queue on the left, the whole library on the right */
+		body.app { display: block; padding: 0; }
+		.app-layout { display: flex; min-height: 100vh; }
+		.side { flex: none; width: 320px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 22px; padding: 28px 24px 20px; border-right: 1px solid var(--border); }
+		.side h1 { margin: 0; font-size: 20px; }
+		.side .field { margin-bottom: 8px; }
+		.side #keyinput { padding: 10px 14px; }
+		.side .hint { margin: 6px 2px 0; }
+		.drop { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 20px 12px; text-align: center; color: var(--text); background: var(--card); border: 1.5px dashed var(--border); border-radius: 14px; cursor: pointer; transition: border-color .15s, background .15s; }
+		.drop:hover, .drop:focus-visible, body.dragging .drop { border-color: var(--accent); background: var(--accent-soft); outline: none; }
+		.drop svg { color: var(--accent); }
+		.drop strong { font-size: 14px; font-weight: 600; }
+		.drop span { font-size: 12px; color: var(--muted); }
+		#fileinput { display: none; }
+		.queue-head { display: flex; justify-content: space-between; align-items: baseline; }
+		.queue-head .link { font-size: 13px; }
+		ul.queue { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+		ul.queue li { display: flex; align-items: center; gap: 8px; min-height: 34px; font-size: 14px; }
+		ul.queue .qname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		ul.queue .qtag { font-size: 12px; color: var(--muted); }
+		ul.queue .qstate { font-size: 12px; font-weight: 600; color: var(--ok-text); }
+		ul.queue .remove { flex: none; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; color: var(--muted); background: none; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
+		ul.queue .remove:hover { color: var(--text); background: var(--card); }
+		.empty { margin: 0; font-size: 13px; color: var(--muted); }
+		.side .primary { margin-top: 12px; }
+		.progress { height: 4px; margin-top: 10px; border-radius: 999px; background: var(--border); overflow: hidden; }
+		.progress div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+		.spacer { flex: 1; }
+		.nudge { padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); font-size: 13px; }
+		.nudge .link { color: var(--accent); font-size: 13px; font-weight: 600; }
+		.sidefoot { display: flex; gap: 16px; font-size: 13px; }
+		.sidefoot .link { font-size: 13px; }
+		.pane { flex: 1; min-width: 0; background: var(--card); }
+		.panetop { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 16px; padding: 20px 28px 12px; background: var(--card); }
+		.searchbox { flex: 1; max-width: 560px; display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; color: var(--muted); background: var(--bg); border: 1px solid transparent; border-radius: 12px; transition: border-color .15s, box-shadow .15s; }
 		.searchbox:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-		.searchbox input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font: inherit; font-size: 19px; font-weight: 500; color: var(--text); }
+		.searchbox input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font: inherit; font-size: 15px; color: var(--text); }
 		.searchbox input::-webkit-search-cancel-button { display: none; }
 		.count { font-size: 13px; color: var(--muted); white-space: nowrap; }
-		.label { margin: 6px 4px -6px; font-size: 13px; font-weight: 600; color: var(--muted); }
-		.label:empty { display: none; }
-		ul.books { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-		ul.books:empty { display: none; }
-		ul.books li { padding: 10px 12px 10px 18px; min-height: 40px; border-top: 1px solid var(--border); }
-		ul.books li:first-child { border-top: none; }
-		.send { white-space: nowrap; }
-		.send.sent { color: var(--ok-text); background: var(--ok-bg); }
-		.browse { display: block; margin: 18px auto 0; font-weight: 500; color: var(--accent); }
-		.tabletop { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
-		.tabletop .filter { flex: 1; min-width: 200px; max-width: 520px; }
-		.tablewrap { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow-x: auto; }
 		table { width: 100%; border-collapse: collapse; font-size: 14px; }
-		th { position: sticky; top: 0; background: var(--card); text-align: left; padding: 0; border-bottom: 1px solid var(--border); }
-		th button { width: 100%; padding: 12px 14px; font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; text-align: left; color: var(--muted); background: none; border: none; cursor: pointer; white-space: nowrap; }
+		th { position: sticky; top: 76px; z-index: 1; background: var(--card); text-align: left; padding: 0; border-bottom: 1px solid var(--border); }
+		th button { width: 100%; padding: 10px 12px; font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; text-align: left; color: var(--muted); background: none; border: none; cursor: pointer; white-space: nowrap; }
 		th button:hover { color: var(--text); }
-		td { padding: 10px 14px; border-top: 1px solid var(--border); vertical-align: middle; }
+		th:first-child, td.pick { width: 1%; padding-left: 28px; }
+		th:last-child, td:last-child { padding-right: 28px; }
+		td { padding: 10px 12px; border-top: 1px solid var(--border); vertical-align: middle; }
 		tbody tr:first-child td { border-top: none; }
-		tbody tr { cursor: default; }
+		tbody tr { cursor: pointer; }
 		tbody tr:hover { background: var(--bg); }
 		tbody tr.selected { background: var(--accent-soft); }
+		td.pick input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; display: block; }
 		td.strong { font-weight: 500; }
 		td.muted { color: var(--muted); }
 		td.nowrap { white-space: nowrap; }
-		td.action { width: 1%; text-align: right; }
-		td.action .send { visibility: hidden; }
-		tbody tr:hover td.action .send, tbody tr.selected td.action .send, td.action .send.sent, td.action .send:disabled, td.action .send:focus-visible { visibility: visible; }
-		.primary-send { color: var(--on-accent); background: var(--accent); }
-		@media (hover: none) { td.action .send { visibility: visible; } }
-		@media (max-width: 720px) { .hide-narrow { display: none; } }
-		.selbar { position: sticky; bottom: 16px; display: flex; align-items: center; gap: 16px; padding: 10px 10px 10px 20px; background: var(--text); color: var(--bg); border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.2); font-size: 14px; font-weight: 500; }
-		.selbar #selcount { flex: 1; }
-		.selbar .link { color: var(--bg); opacity: .75; }
-		.selbar .primary { width: auto; margin: 0; padding: 10px 18px; font-size: 14px; }
-		.foot { margin: 12px 0 24px; text-align: center; font-size: 13px; color: var(--muted); }
-		.foot .link { font-size: 13px; }
-		.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); max-width: min(560px, calc(100% - 32px)); padding: 12px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; box-shadow: 0 12px 32px rgba(0,0,0,.15); }
+		.tablenote { margin: 24px 28px; font-size: 14px; color: var(--muted); }
+		.tablenote:empty { display: none; }
+		@media (max-width: 1100px) { .hide-mid { display: none; } }
+		@media (max-width: 820px) {
+			.app-layout { flex-direction: column; }
+			.side { width: auto; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); padding: 20px 16px; }
+			.spacer { display: none; }
+			.panetop { padding: 12px 16px; }
+			th { top: 68px; }
+			th:first-child, td.pick { padding-left: 16px; }
+			th:last-child, td:last-child { padding-right: 16px; }
+			.hide-narrow { display: none; }
+		}
+		dialog.card { max-width: 400px; color: var(--text); }
+		dialog::backdrop { background: rgba(0,0,0,.35); }
+		.toast { position: fixed; left: 50%; bottom: 24px; z-index: 20; transform: translate(-50%, 20px); max-width: min(560px, calc(100% - 32px)); padding: 12px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; box-shadow: 0 12px 32px rgba(0,0,0,.15); }
 		.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; cursor: pointer; }
 		.toast.success { background: var(--ok-bg); color: var(--ok-text); }
 		.toast.error { background: var(--err-bg); color: var(--err-text); }
@@ -229,8 +216,9 @@
 	<div class="status" id="loginstatus" role="status"></div>
 </form>
 
-<form class="card" id="change" hidden novalidate>
-	<h1>Settings</h1>
+<dialog class="card" id="settings" aria-labelledby="settingstitle">
+<form id="change" novalidate>
+	<h1 id="settingstitle">Settings</h1>
 	<div id="passcodesettings">
 	<p class="sub">Change your passcode. Logged-in browsers stay logged in until it changes.</p>
 	<input class="visually-hidden" type="text" name="username" value="Book library" autocomplete="username" tabindex="-1" aria-hidden="true" readonly/>
@@ -250,82 +238,79 @@
 	<button class="secondary" type="button" id="makesync">Create sync key</button>
 	<p class="or">Touch ID and Face ID</p>
 	<button class="secondary" type="button" id="addpasskey">Add a passkey on this device</button>
-	<button class="link" type="button" id="changecancel" style="margin-top:14px">Cancel</button>
+	<button class="link" type="button" id="changecancel" style="margin-top:14px">Done</button>
 	<div class="status" id="changestatus" role="status"></div>
 </form>
+</dialog>
 
-<main id="library" hidden>
-	<header class="bar">
-		<h1>Library</h1>
-		<div class="reader">
-			<button class="pill" type="button" id="pill" aria-expanded="false" aria-controls="connect"><span class="dot" id="dot"></span><span id="pilltext">Connect e-reader</span></button>
-			<div class="popover" id="connect" hidden>
-				<label class="field" for="keyinput">E-reader key</label>
-				<input class="text code" type="text" id="keyinput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="••••" maxlength="4"/>
-				<p class="hint" id="keyhint">Open books.bharrisk.com on your Kobo or Kindle to see its key.</p>
+<div class="app-layout" id="library" hidden>
+	<aside class="side">
+		<h1>Send to e-reader</h1>
+
+		<div>
+			<label class="field" for="keyinput">E-reader key</label>
+			<input class="text code" type="text" id="keyinput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="••••" maxlength="4"/>
+			<p class="hint" id="keyhint">Open books.bharrisk.com on your Kobo or Kindle to see its key.</p>
+		</div>
+
+		<label class="drop" for="fileinput" tabindex="0" id="dropzone">
+			<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"/></svg>
+			<strong>Choose a file</strong>
+			<span>or drop it anywhere · added to Calibre too</span>
+		</label>
+		<input type="file" id="fileinput" accept=".txt,.epub,.mobi,.azw3,.pdf,.cbz,.cbr,application/epub+zip,application/epub,application/x-mobipocket-ebook,application/pdf,application/vnd.comicbook+zip,application/vnd.comicbook-rar"/>
+
+		<section aria-labelledby="queuetitle">
+			<div class="queue-head">
+				<label class="field" id="queuetitle">To send</label>
+				<button class="link" type="button" id="clearsel" hidden>Clear</button>
 			</div>
+			<ul class="queue" id="queue"></ul>
+			<p class="empty" id="queueempty">Tick books in the library, or add a file.</p>
+			<button class="primary" type="button" id="sendbtn" disabled>Send</button>
+			<div class="progress" id="progress" hidden><div id="progressbar"></div></div>
+		</section>
+
+		<div class="spacer"></div>
+
+		<div class="nudge" id="passkeybanner" hidden>
+			Log in with Touch ID or Face ID instead? Your passcode will be turned off.
+			<button class="link" type="button" id="bannerbtn">Set up</button>
+			<div class="status" id="passkeystatus" role="status"></div>
 		</div>
-	</header>
-
-	<div class="banner" id="passkeybanner" hidden>
-		<span>Switch to Touch ID or Face ID? Your passcode will be turned off.</span>
-		<button class="send" type="button" id="bannerbtn">Set up</button>
-	</div>
-	<div class="status" id="passkeystatus" role="status"></div>
-
-	<section id="searchview">
-		<label class="visually-hidden" for="search">Search your library</label>
-		<div class="searchbox">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
-			<input type="search" id="search" placeholder="Search title, author or series" autocomplete="off" spellcheck="false"/>
-			<span class="count" id="count"></span>
+		<div class="sidefoot">
+			<button class="link" id="changelink" type="button">Settings</button>
+			<button class="link" id="logout" type="button">Log out</button>
 		</div>
-		<p class="label" id="listlabel"></p>
-		<ul class="books" id="books"></ul>
-		<button class="link browse" type="button" id="browse">Browse the whole library →</button>
-	</section>
+	</aside>
 
-	<section id="tableview" hidden>
-		<div class="tabletop">
-			<button class="link" type="button" id="back">← Search</button>
-			<label class="visually-hidden" for="filter">Filter</label>
-			<input class="text filter" type="search" id="filter" placeholder="Filter by title, author or series" autocomplete="off" spellcheck="false"/>
+	<main class="pane">
+		<div class="panetop">
+			<label class="visually-hidden" for="filter">Search your library</label>
+			<div class="searchbox">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+				<input type="search" id="filter" placeholder="Search title, author or series" autocomplete="off" spellcheck="false"/>
+			</div>
 			<span class="count" id="tablecount"></span>
 		</div>
-		<div class="tablewrap">
-			<table>
-				<thead><tr id="headrow"></tr></thead>
-				<tbody id="rows"></tbody>
-			</table>
-		</div>
-	</section>
-
-	<div class="selbar" id="selbar" hidden>
-		<span id="selcount"></span>
-		<button class="link" type="button" id="clearsel">Clear</button>
-		<button class="primary" type="button" id="sendsel">Send</button>
-	</div>
-
-	<footer class="foot"><a class="link" href="/">Send a file</a> · <button class="link" id="changelink" type="button">Settings</button> · <button class="link" id="logout" type="button">Log out</button></footer>
+		<table>
+			<thead><tr id="headrow"></tr></thead>
+			<tbody id="rows"></tbody>
+		</table>
+		<p class="tablenote" id="tablenote"></p>
+	</main>
 	<div class="toast" id="status" role="status"></div>
-</main>
+</div>
 
 <script>
 'use strict'
 var loginForm = document.getElementById('login')
 var libraryEl = document.getElementById('library')
+var settingsEl = document.getElementById('settings')
 var keyinput = document.getElementById('keyinput')
-var keyhint = document.getElementById('keyhint')
-var search = document.getElementById('search')
 var filterEl = document.getElementById('filter')
-var searchEl = document.getElementById('searchview')
-var tableEl = document.getElementById('tableview')
 var statusEl = document.getElementById('status')
-var countEl = document.getElementById('count')
-var booksEl = document.getElementById('books')
 var books = []
-var device = null  // the e-reader showing the key, once found
-var sendState = {}  // book id -> 'sending' | 'sent'
 
 function request(method, url, data, cb) {
 	var x = new XMLHttpRequest()
@@ -460,7 +445,8 @@ var changeForm = document.getElementById('change')
 function showLogin(setup) {
 	setupMode = !!setup
 	libraryEl.hidden = true
-	changeForm.hidden = true
+	document.body.classList.remove('app')
+	if (settingsEl.open) settingsEl.close()
 	loginForm.hidden = false
 	document.getElementById('confirmrow').hidden = !setupMode
 	document.getElementById('passkeyrow').hidden = setupMode || !passkeySupported || passkeyCount === 0
@@ -523,14 +509,12 @@ document.getElementById('changelink').addEventListener('click', function () {
 		document.getElementById('passcodesettings').hidden = info.passcodeLogin === false
 		document.getElementById('passcodeoff').hidden = info.passcodeLogin !== false
 	})
-	libraryEl.hidden = true
-	changeForm.hidden = false
-	document.getElementById('current').focus()
+	setStatus(document.getElementById('changestatus'), '', '')
+	settingsEl.showModal()
 })
 
 document.getElementById('changecancel').addEventListener('click', function () {
-	changeForm.hidden = true
-	libraryEl.hidden = false
+	settingsEl.close()
 })
 
 changeForm.addEventListener('submit', function (e) {
@@ -546,7 +530,7 @@ changeForm.addEventListener('submit', function (e) {
 			setStatus(status, 'success', 'Passcode changed')
 			document.getElementById('current').value = ''
 			document.getElementById('newcode').value = ''
-			setTimeout(function () { changeForm.hidden = true; libraryEl.hidden = false; setStatus(status, '', '') }, 1200)
+			setTimeout(function () { settingsEl.close(); setStatus(status, '', '') }, 1200)
 		} else {
 			setStatus(status, 'error', data.error || 'Could not change it')
 		}
@@ -556,7 +540,9 @@ changeForm.addEventListener('submit', function (e) {
 document.getElementById('logout').addEventListener('click', function () {
 	request('POST', '/api/library/login', { logout: true }, function () {
 		books = []
-		render()
+		selected = {}
+		renderQueue()
+		renderTable()
 		showLogin()
 	})
 })
@@ -575,6 +561,7 @@ function load() {
 		}
 		loginForm.hidden = true
 		libraryEl.hidden = false
+		document.body.classList.add('app')
 		request('GET', '/api/library/login', null, function (c, info) {
 			passkeyCount = info.passkeys || 0
 			document.getElementById('passkeybanner').hidden = !passkeySupported || passkeyCount > 0
@@ -587,10 +574,8 @@ function load() {
 		books.forEach(function (b) {
 			b.text = (b.title + ' ' + b.authors + ' ' + b.series).toLowerCase()
 		})
-		render()
 		renderTable()
-		if (!tableEl.hidden) filterEl.focus()
-		else if (window.matchMedia('(hover: hover)').matches) search.focus()
+		if (window.matchMedia('(hover: hover)').matches) (keyinput.value ? filterEl : keyinput).focus()
 	})
 }
 
@@ -615,68 +600,30 @@ function seriesText(book) {
 	return book.series + (book.seriesIndex != null ? ' ' + book.seriesIndex : '')
 }
 
-function sendButton(book, primary) {
-	var btn = document.createElement('button')
-	btn.type = 'button'
-	btn.className = primary ? 'send primary-send' : 'send'
-	var state = sendState[book.id]
-	btn.textContent = state === 'sending' ? 'Sending…' : (state === 'sent' ? 'Sent ✓' : 'Send')
-	if (state === 'sent') btn.classList.add('sent')
-	btn.disabled = state === 'sending'
-	btn.addEventListener('click', function (e) {
-		e.stopPropagation()
-		send(book)
-	})
-	return btn
-}
-
-// Search view: recently added when empty, matches as you type
-function render() {
-	var query = search.value.trim()
-	var shown = query ? filtered(query) : books.slice(0, 8)
-	booksEl.textContent = ''
-	shown.slice(0, 50).forEach(function (book) {
-		var li = document.createElement('li')
-		var info = document.createElement('div')
-		info.className = 'book'
-		var title = document.createElement('strong')
-		title.textContent = book.title
-		var meta = document.createElement('span')
-		meta.textContent = [book.authors, seriesText(book), book.published ? 'Published ' + formatDate(book.published) : ''].filter(Boolean).join(' · ')
-		info.appendChild(title)
-		info.appendChild(meta)
-		li.appendChild(info)
-		li.appendChild(sendButton(book))
-		booksEl.appendChild(li)
-	})
-	document.getElementById('listlabel').textContent = books.length === 0 ? 'No books yet. Run the Calibre sync on your Mac to add them.' :
-		(query ? (shown.length ? '' : 'Nothing matches “' + query + '”') : 'Recently added')
-	countEl.textContent = query && books.length ? shown.length + ' of ' + books.length : ''
-}
-
-search.addEventListener('input', function () {
-	filterEl.value = search.value
-	render()
-})
-
-// Table view: the whole library, sortable, filter as you type
+// The whole library: sortable, filters as you type, tick rows to send
 var columns = [
-	{ key: 'added', label: 'Added', get: function (b) { return b.added || '' }, show: function (b) { return formatDate(b.added, true) }, cls: 'muted nowrap' },
 	{ key: 'title', label: 'Title', get: function (b) { return b.title.toLowerCase() }, show: function (b) { return b.title }, cls: 'strong' },
 	{ key: 'author', label: 'Author', get: function (b) { return b.authors.toLowerCase() }, show: function (b) { return b.authors }, cls: '' },
-	{ key: 'series', label: 'Series', get: function (b) { return b.series ? b.series.toLowerCase() + '\u0000' + String(1000 + (b.seriesIndex || 0)) : '￿' }, show: seriesText, cls: 'muted hide-narrow' },
-	{ key: 'published', label: 'Published', get: function (b) { return b.published || '' }, show: function (b) { return formatDate(b.published) }, cls: 'muted nowrap hide-narrow' }
+	{ key: 'series', label: 'Series', get: function (b) { return b.series ? b.series.toLowerCase() + '\u0000' + String(1000 + (b.seriesIndex || 0)) : '￿' }, show: seriesText, cls: 'muted hide-mid' },
+	{ key: 'published', label: 'Published', get: function (b) { return b.published || '' }, show: function (b) { return formatDate(b.published) }, cls: 'muted nowrap hide-narrow' },
+	{ key: 'added', label: 'Added', get: function (b) { return b.added || '' }, show: function (b) { return formatDate(b.added, true) }, cls: 'muted nowrap hide-narrow' }
 ]
 var sortKey = 'added'
 var sortDesc = true
-var selected = {}  // book id -> true, for sending several at once
+var selected = {}  // book id -> true
+var queueFile = null  // a file from this computer, sent along with the books
+var sentState = {}  // queue item id -> 'sending' | 'sent'
+var sending = false
 
 function renderTable() {
 	var head = document.getElementById('headrow')
 	head.textContent = ''
+	var pickTh = document.createElement('th')
+	pickTh.innerHTML = '<span class="visually-hidden">Selected</span>'
+	head.appendChild(pickTh)
 	columns.forEach(function (col) {
 		var th = document.createElement('th')
-		th.className = col.cls.indexOf('hide-narrow') >= 0 ? 'hide-narrow' : ''
+		th.className = col.cls.replace(/\b(strong|muted|nowrap)\b/g, '').trim()
 		th.setAttribute('aria-sort', col.key === sortKey ? (sortDesc ? 'descending' : 'ascending') : 'none')
 		var btn = document.createElement('button')
 		btn.type = 'button'
@@ -689,10 +636,10 @@ function renderTable() {
 		th.appendChild(btn)
 		head.appendChild(th)
 	})
-	head.appendChild(document.createElement('th'))
 
 	var col = columns.filter(function (c) { return c.key === sortKey })[0]
-	var shown = filtered(filterEl.value.trim()).sort(function (a, b) {
+	var query = filterEl.value.trim()
+	var shown = filtered(query).sort(function (a, b) {
 		var x = col.get(a), y = col.get(b)
 		var r = x < y ? -1 : (x > y ? 1 : 0)
 		return sortDesc ? -r : r
@@ -702,116 +649,156 @@ function renderTable() {
 	shown.forEach(function (book) {
 		var tr = document.createElement('tr')
 		if (selected[book.id]) tr.className = 'selected'
+		var pick = document.createElement('td')
+		pick.className = 'pick'
+		var box = document.createElement('input')
+		box.type = 'checkbox'
+		box.checked = !!selected[book.id]
+		box.setAttribute('aria-label', 'Send ' + book.title)
+		pick.appendChild(box)
+		tr.appendChild(pick)
 		columns.forEach(function (c) {
 			var td = document.createElement('td')
 			td.className = c.cls
 			td.textContent = c.show(book)
 			tr.appendChild(td)
 		})
-		var td = document.createElement('td')
-		td.className = 'action'
-		td.appendChild(sendButton(book, true))
-		tr.appendChild(td)
-		tr.addEventListener('click', function () {
+		function toggle() {
 			if (selected[book.id]) delete selected[book.id]
 			else selected[book.id] = true
+			box.checked = !!selected[book.id]
 			tr.classList.toggle('selected', !!selected[book.id])
-			updateSelection()
-		})
+			renderQueue()
+		}
+		box.addEventListener('click', function (e) { e.stopPropagation(); toggle() })
+		tr.addEventListener('click', toggle)
 		body.appendChild(tr)
 	})
-	document.getElementById('tablecount').textContent = shown.length === books.length ? books.length + ' books' : shown.length + ' of ' + books.length
+	document.getElementById('tablecount').textContent = !books.length ? '' : (shown.length === books.length ? books.length + ' books' : shown.length + ' of ' + books.length)
+	document.getElementById('tablenote').textContent = books.length === 0 ? 'No books yet. Run the Calibre sync on your Mac to add them.' :
+		(shown.length ? '' : 'Nothing matches “' + query + '”')
 }
 
-function selectedBooks() {
-	return books.filter(function (b) { return selected[b.id] })
+filterEl.addEventListener('input', renderTable)
+
+// The queue: everything that goes out when you press Send
+function queueItems() {
+	var list = []
+	if (queueFile) list.push({ id: 'file', file: queueFile, name: queueFile.name })
+	books.forEach(function (b) { if (selected[b.id]) list.push({ id: b.id, book: b, name: b.title }) })
+	return list
 }
 
-function updateSelection() {
-	var n = selectedBooks().length
-	var bar = document.getElementById('selbar')
-	bar.hidden = n === 0
-	document.getElementById('selcount').textContent = n + (n === 1 ? ' book selected' : ' books selected')
-	document.getElementById('sendsel').textContent = n === 1 ? 'Send 1 book' : 'Send ' + n + ' books'
+function renderQueue() {
+	var list = queueItems()
+	var ul = document.getElementById('queue')
+	ul.textContent = ''
+	list.forEach(function (item) {
+		var li = document.createElement('li')
+		var name = document.createElement('span')
+		name.className = 'qname'
+		name.textContent = item.name
+		name.title = item.name
+		li.appendChild(name)
+		var state = sentState[item.id]
+		if (state) {
+			var s = document.createElement('span')
+			s.className = 'qstate'
+			s.textContent = state === 'sent' ? 'Sent ✓' : 'Sending…'
+			if (state === 'sending') s.style.color = 'var(--muted)'
+			li.appendChild(s)
+		} else {
+			if (item.file) {
+				var tag = document.createElement('span')
+				tag.className = 'qtag'
+				tag.textContent = formatSize(item.file.size)
+				li.appendChild(tag)
+			}
+			var rm = document.createElement('button')
+			rm.type = 'button'
+			rm.className = 'remove'
+			rm.textContent = '✕'
+			rm.setAttribute('aria-label', 'Remove ' + item.name)
+			rm.disabled = sending
+			rm.addEventListener('click', function () {
+				if (item.file) { queueFile = null; fileinput.value = '' }
+				else delete selected[item.id]
+				renderQueue()
+				renderTable()
+			})
+			li.appendChild(rm)
+		}
+		ul.appendChild(li)
+	})
+	var pending = list.filter(function (i) { return sentState[i.id] !== 'sent' })
+	document.getElementById('queueempty').hidden = list.length > 0
+	document.getElementById('clearsel').hidden = !list.length || sending
+	var btn = document.getElementById('sendbtn')
+	btn.disabled = sending || !pending.length
+	var n = pending.length
+	btn.textContent = sending ? 'Sending…' : (n === 0 ? 'Send' : (n === 1 ? (pending[0].file ? 'Send file' : 'Send 1 book') : 'Send ' + n + ' books'))
 }
 
 document.getElementById('clearsel').addEventListener('click', function () {
 	selected = {}
-	renderTable()
-	updateSelection()
-})
-
-document.getElementById('sendsel').addEventListener('click', function () {
-	var list = selectedBooks()
-	if (!device) {
-		pendingBook = list
-		openConnect(true)
-		keyhint.className = 'hint'
-		keyhint.textContent = 'Enter the key your e-reader shows, and the ' + list.length + ' selected books will send.'
-		return
-	}
-	sendMany(list)
-})
-
-// Sends books one after another, so the e-reader lists each one
-function sendMany(list) {
-	selected = {}
-	updateSelection()
-	var i = 0
-	function next() {
-		if (i < list.length) send(list[i++], next)
-	}
-	next()
-}
-
-filterEl.addEventListener('input', function () {
-	search.value = filterEl.value
-	render()
+	queueFile = null
+	fileinput.value = ''
+	sentState = {}
+	renderQueue()
 	renderTable()
 })
 
-function showTable(show) {
-	tableEl.hidden = !show
-	searchEl.hidden = show
-	libraryEl.classList.toggle('wide', show)
-	if (show) { renderTable(); filterEl.focus() } else { render(); search.focus() }
-	try { history.replaceState(null, '', show ? '#all' : location.pathname) } catch (err) {}
+// Files from this computer: chosen, or dropped anywhere on the page
+var fileinput = document.getElementById('fileinput')
+var accepted = fileinput.accept.split(',')
+if (/iPhone|iPad/.test(navigator.userAgent)) fileinput.accept = ''  // iOS can't pick .mobi otherwise
+
+function isAccepted(file) {
+	var name = file.name.toLowerCase()
+	return accepted.some(function (item) {
+		return item[0] === '.' ? name.slice(-item.length) === item : file.type === item
+	})
 }
 
-document.getElementById('browse').addEventListener('click', function () { showTable(true) })
-document.getElementById('back').addEventListener('click', function () { showTable(false) })
-if (location.hash === '#all') { tableEl.hidden = false; searchEl.hidden = true; libraryEl.classList.add('wide') }
+function addFile(file) {
+	if (!file) return
+	if (!isAccepted(file)) { toast('error', file.name + ' isn’t an ebook file this can send.'); return }
+	if (file.size > 50 * 1024 * 1024) { toast('error', file.name + ' is too large. Files can be up to 50 MB.'); return }
+	queueFile = file
+	delete sentState.file
+	renderQueue()
+}
 
-// E-reader: the pill shows which one books go to. Its key is remembered
-// for the hour it lasts.
+fileinput.addEventListener('change', function () { addFile(fileinput.files[0]) })
+document.getElementById('dropzone').addEventListener('keydown', function (e) {
+	if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileinput.click() }
+})
+var dragDepth = 0
+document.addEventListener('dragenter', function (e) { if (libraryEl.hidden) return; e.preventDefault(); dragDepth++; document.body.classList.add('dragging') })
+document.addEventListener('dragleave', function () { if (--dragDepth <= 0) { dragDepth = 0; document.body.classList.remove('dragging') } })
+document.addEventListener('dragover', function (e) { if (!libraryEl.hidden) e.preventDefault() })
+document.addEventListener('drop', function (e) {
+	if (libraryEl.hidden) return
+	e.preventDefault()
+	dragDepth = 0
+	document.body.classList.remove('dragging')
+	if (e.dataTransfer.files.length) addFile(e.dataTransfer.files[0])
+})
+
+// E-reader: its key is remembered for the hour it lasts
+var device = null
 var lookedUpKey = null
-var pendingBook = null
-var pill = document.getElementById('pill')
-var popover = document.getElementById('connect')
+var keyhint = document.getElementById('keyhint')
 
-function openConnect(open) {
-	popover.hidden = !open
-	pill.setAttribute('aria-expanded', open ? 'true' : 'false')
-	if (open) keyinput.focus()
-}
-
-pill.addEventListener('click', function () { openConnect(popover.hidden) })
-document.addEventListener('click', function (e) {
-	if (!popover.hidden && !popover.contains(e.target) && !pill.contains(e.target) && !(e.target.classList && e.target.classList.contains('send')) && e.target.id !== 'sendsel') openConnect(false)
-})
-
-function setDevice(found, key) {
-	device = found
-	var name = found === 'kobo' ? 'Kobo' : (found === 'kindle' ? 'Kindle' : 'E-reader')
-	document.getElementById('dot').className = found ? 'dot on' : 'dot'
-	document.getElementById('pilltext').textContent = found ? name + ' · ' + key : 'Connect e-reader'
+function readerName() {
+	return device === 'kobo' ? 'Kobo' : (device === 'kindle' ? 'Kindle' : 'e-reader')
 }
 
 function lookUpKey() {
 	var key = keyinput.value.trim().toUpperCase()
 	if (key.length !== 4) {
 		lookedUpKey = null
-		setDevice(null)
+		device = null
 		keyhint.className = 'hint'
 		keyhint.textContent = 'Open books.bharrisk.com on your Kobo or Kindle to see its key.'
 		return
@@ -821,76 +808,144 @@ function lookUpKey() {
 	request('GET', '/api/device?key=' + encodeURIComponent(key), null, function (code, data) {
 		if (keyinput.value.trim().toUpperCase() !== key) return
 		if (code !== 200 || !data.device) {
-			setDevice(null)
+			device = null
 			keyhint.className = 'hint bad'
 			keyhint.textContent = 'No e-reader is showing ' + key + '. Keys last an hour.'
 			try { localStorage.removeItem('readerKey') } catch (err) {}
 			return
 		}
-		setDevice(data.device, key)
+		device = data.device
 		keyhint.className = 'hint ok'
-		keyhint.textContent = data.device === 'kobo' ? 'Kobo connected. EPUBs are converted for Kobo.' : (data.device === 'kindle' ? 'Kindle connected. EPUBs are converted to MOBI.' : 'E-reader connected.')
+		keyhint.textContent = device === 'kobo' ? 'Kobo connected. EPUBs are converted for Kobo.' : (device === 'kindle' ? 'Kindle connected. EPUBs are converted to MOBI.' : 'E-reader connected.')
 		try { localStorage.setItem('readerKey', JSON.stringify({ key: key, at: Date.now() })) } catch (err) {}
-		if (pendingBook) {
-			openConnect(false)
-			var book = pendingBook
-			pendingBook = null
-			if (Array.isArray(book)) sendMany(book)
-			else send(book)
-		} else {
-			setTimeout(function () { openConnect(false) }, 700)
-		}
 	})
 }
 
 keyinput.addEventListener('input', lookUpKey)
 
-function toast(kind, text, html) {
-	setStatus(statusEl, 'toast ' + kind, text, html)
+function toast(kind, text) {
+	statusEl.textContent = text || ''
 	statusEl.className = 'toast show ' + kind
 	clearTimeout(toast.timer)
-	if (kind !== 'error') toast.timer = setTimeout(function () { statusEl.className = 'toast' }, 6000)
+	if (kind !== 'error') toast.timer = setTimeout(function () { statusEl.className = 'toast' }, 7000)
 }
 statusEl.addEventListener('click', function () { statusEl.className = 'toast' })
 
-function refresh() {
-	render()
-	if (!tableEl.hidden) renderTable()
+function setProgress(fraction) {
+	document.getElementById('progress').hidden = fraction === null
+	document.getElementById('progressbar').style.width = Math.round((fraction || 0) * 100) + '%'
 }
 
-function send(book, done) {
-	if (!device) {
-		pendingBook = book
-		openConnect(true)
-		keyhint.className = 'hint'
-		keyhint.textContent = 'Enter the key your e-reader shows, and “' + book.title + '” will send.'
-		return
-	}
-	sendState[book.id] = 'sending'
-	refresh()
+// Sends one library book
+function sendBook(book, cb) {
 	request('POST', '/api/library/send', { id: book.id, key: lookedUpKey }, function (code, data) {
-		if (code === 200) {
-			sendState[book.id] = 'sent'
-			var reader = device === 'kobo' ? 'Kobo' : (device === 'kindle' ? 'Kindle' : 'e-reader')
-			toast('success', '“' + book.title + '” sent. ' + (data.waiting > 1 ? data.waiting + ' books are waiting on your ' + reader + '. Tap each one there to download it.' : 'Tap it on your ' + reader + ' to download it.'))
-			if (done) done()
-		} else if (code === 401) {
-			delete sendState[book.id]
-			showLogin()
-		} else {
-			delete sendState[book.id]
-			toast('error', data.error || 'Sending failed (HTTP ' + code + ')')
-			if (/key/i.test(data.error || '')) { setDevice(null); lookedUpKey = null; openConnect(true) }
-		}
-		refresh()
+		if (code === 401) { showLogin(); cb('Logged out'); return }
+		if (code !== 200) { cb(data.error || 'Sending failed (HTTP ' + code + ')'); return }
+		cb(null, data.waiting)
 	})
 }
+
+// Sends a file from this computer, in 3 MB pieces (the server takes at most
+// 4.5 MB per request). Being logged in, it's also added to Calibre.
+function sendFile(file, cb) {
+	var chunkSize = 3 * 1024 * 1024
+	var key = lookedUpKey
+	function post(url, data, done) {
+		var x = new XMLHttpRequest()
+		x.open('POST', url, true)
+		x.setRequestHeader('Content-Type', 'application/json')
+		x.onload = x.onerror = function () { done(x) }
+		x.send(JSON.stringify(data))
+	}
+	function errorOf(x, fallback) {
+		try { return JSON.parse(x.responseText).error || fallback } catch (err) { return x.responseText && x.status < 500 && x.responseText.length < 300 ? x.responseText : fallback }
+	}
+	function chunk(id, seq, tries) {
+		var start = seq * chunkSize
+		if (start >= file.size && seq > 0) {
+			setProgress(1)
+			post('/api/finalize', { id: id, key: key, filename: file.name, mimetype: file.type, kepubify: device === 'kobo', kindlegen: device === 'kindle' }, function (x) {
+				setProgress(null)
+				if (x.status === 200) cb(null)
+				else cb(errorOf(x, 'Could not send ' + file.name))
+			})
+			return
+		}
+		var x = new XMLHttpRequest()
+		x.open('PUT', '/api/upload?id=' + id + '&seq=' + seq, true)
+		x.setRequestHeader('Content-Type', 'application/octet-stream')
+		x.upload.onprogress = function (e) { setProgress(file.size ? Math.min(1, (start + e.loaded) / file.size) : 1) }
+		x.onload = function () {
+			if (x.status === 200) chunk(id, seq + 1, 0)
+			else if (x.status >= 500 && tries < 2) chunk(id, seq, tries + 1)
+			else { setProgress(null); cb('Upload failed: ' + errorOf(x, 'HTTP ' + x.status)) }
+		}
+		x.onerror = function () {
+			if (tries < 2) chunk(id, seq, tries + 1)
+			else { setProgress(null); cb('Upload failed. Check your connection and try again.') }
+		}
+		x.send(file.slice(start, start + chunkSize))
+	}
+	setProgress(0)
+	post('/api/upload', { key: key }, function (x) {
+		var id = null
+		try { id = JSON.parse(x.responseText).id } catch (err) {}
+		if (x.status !== 200 || !id) { setProgress(null); cb('Upload failed. Is the key right?'); return }
+		chunk(id, 0, 0)
+	})
+}
+
+// Sends everything in the queue, one at a time, so the e-reader lists each
+document.getElementById('sendbtn').addEventListener('click', function () {
+	if (!device) {
+		keyhint.className = 'hint bad'
+		keyhint.textContent = keyinput.value.trim().length === 4 ? 'No e-reader is showing this key. Keys last an hour.' : 'Enter the key your e-reader shows first.'
+		keyinput.focus()
+		return
+	}
+	var list = queueItems().filter(function (i) { return sentState[i.id] !== 'sent' })
+	var done = 0
+	sending = true
+	function next() {
+		var item = list[done]
+		if (!item) {
+			sending = false
+			toast('success', (done === 1 ? '“' + list[0].name + '” sent. Tap it' : done + ' books sent. Tap each one') + ' on your ' + readerName() + ' to download it.')
+			setTimeout(function () {
+				// Clear what was sent, keep anything added meanwhile
+				list.forEach(function (i) { if (i.file) { if (queueFile === i.file) { queueFile = null; fileinput.value = '' } } else delete selected[i.id] ; delete sentState[i.id] })
+				renderQueue()
+				renderTable()
+			}, 2500)
+			renderQueue()
+			return
+		}
+		sentState[item.id] = 'sending'
+		renderQueue()
+		var fn = item.file ? sendFile : sendBook
+		fn(item.file || item.book, function (err) {
+			if (err) {
+				delete sentState[item.id]
+				sending = false
+				renderQueue()
+				toast('error', err)
+				if (/key/i.test(err)) { device = null; lookedUpKey = null; lookUpKey() }
+				return
+			}
+			sentState[item.id] = 'sent'
+			done++
+			next()
+		})
+	}
+	next()
+})
 
 try {
 	var saved = JSON.parse(localStorage.getItem('readerKey') || 'null')
 	if (saved && Date.now() - saved.at < 60 * 60 * 1000) keyinput.value = saved.key
 } catch (err) {}
 lookUpKey()
+renderQueue()
 load()
 </script>
 </body>
