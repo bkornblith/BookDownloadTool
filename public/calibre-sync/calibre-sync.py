@@ -137,14 +137,14 @@ def read_catalogue(library):
             files = {}
             for book, fmt, name in db.execute('SELECT book, upper(format), name FROM data'):
                 files.setdefault(book, {})[fmt] = name
-            rows = db.execute('SELECT id, title, author_sort, series_index, path FROM books').fetchall()
+            rows = db.execute('SELECT id, title, author_sort, series_index, path, timestamp, pubdate FROM books').fetchall()
         finally:
             db.close()
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
 
     books = []
-    for book_id, title, author_sort, series_index, path in rows:
+    for book_id, title, author_sort, series_index, path, added, published in rows:
         available = files.get(book_id, {})
         for fmt, ext in FORMATS:
             if fmt not in available:
@@ -163,6 +163,8 @@ def read_catalogue(library):
                 'sortAuthor': author_sort or '',
                 'series': series.get(book_id, ''),
                 'seriesIndex': series_index if book_id in series else None,
+                'added': (added or '').replace(' ', 'T', 1) or None,
+                'published': (published or '').replace(' ', 'T', 1) or None,
                 'format': fmt,
                 'size': st.st_size,
                 'fingerprint': '%s:%d:%d' % (fmt, st.st_size, int(st.st_mtime)),
@@ -172,8 +174,27 @@ def read_catalogue(library):
     return books
 
 
+def self_update(site):
+    """Keeps this script in step with the site: the next run uses the new copy."""
+    me = os.path.abspath(__file__)
+    try:
+        with urllib.request.urlopen(site.rstrip('/') + '/calibre-sync/calibre-sync.py', timeout=60, context=CONTEXT) as res:
+            latest = res.read()
+        with open(me, 'rb') as f:
+            current = f.read()
+        if latest != current and latest.startswith(b'#!/usr/bin/env python3') and b'def sync(' in latest:
+            tmp = me + '.new'
+            with open(tmp, 'wb') as f:
+                f.write(latest)
+            os.replace(tmp, me)
+            log('Updated the sync script; the next run uses the new version')
+    except Exception as err:
+        log('Could not check for a newer sync script:', err)
+
+
 def sync(config):
     site, password = config['site'], config['password']
+    self_update(site)
     library = os.path.expanduser(config.get('library') or '~/Calibre Library')
     try:
         add_inbox(config, library)
