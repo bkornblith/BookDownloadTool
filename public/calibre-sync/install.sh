@@ -3,7 +3,7 @@
 #
 #   curl -fsSL https://YOUR-SITE/calibre-sync/install.sh | bash -s -- https://YOUR-SITE
 #
-# It asks for the library password, then syncs once and sets up a background job
+# It asks for the library passcode, then syncs once and sets up a background job
 # that syncs at login, every hour, and shortly after Calibre's library changes.
 set -euo pipefail
 
@@ -30,7 +30,7 @@ if [ ! -f "$LIBRARY/metadata.db" ]; then
 	exit 1
 fi
 
-read -r -s -p "Library password (the LIBRARY_PASSWORD you set on Vercel): " PASSWORD < /dev/tty
+read -r -s -p "Library passcode (the one you chose on the library page): " PASSWORD < /dev/tty
 echo
 
 mkdir -p "$DIR" "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"

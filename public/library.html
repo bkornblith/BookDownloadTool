@@ -62,7 +62,6 @@
 			padding: 32px 28px;
 			box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.06);
 		}
-		#login.card { max-width: 380px; margin-top: 12vh; }
 		.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 		h1 { margin: 0 0 4px; font-size: 24px; font-weight: 650; letter-spacing: -0.02em; }
 		.sub { margin: 0 0 24px; color: var(--muted); font-size: 15px; }
@@ -108,6 +107,9 @@
 		}
 		.primary:hover { background: var(--accent-hover); }
 		.primary:disabled { opacity: .6; cursor: default; }
+		.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; padding: 0; }
+		input.code { font: 600 22px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.3em; text-align: center; }
+		#login.card, #change.card { max-width: 380px; margin-top: 12vh; }
 		.status { margin-top: 14px; padding: 12px 14px; border-radius: 12px; font-size: 14px; }
 		.status:empty { display: none; }
 		.status.info { background: var(--accent-soft); }
@@ -145,17 +147,36 @@
 
 <form class="card" id="login" hidden novalidate>
 	<h1>Library</h1>
-	<p class="sub">Your Calibre books.</p>
-	<label class="field" for="password">Password</label>
-	<input class="text" type="password" id="password" autocomplete="current-password" required/>
+	<p class="sub" id="loginsub">Your Calibre books.</p>
+	<!-- Lets password managers save the passcode under a name -->
+	<input class="visually-hidden" type="text" name="username" value="Book library" autocomplete="username" tabindex="-1" aria-hidden="true" readonly/>
+	<label class="field" for="passcode">Passcode</label>
+	<input class="text code" type="password" id="passcode" name="password" inputmode="numeric" pattern="[0-9]*" maxlength="12" autocomplete="current-password" required/>
+	<div id="confirmrow" hidden>
+		<label class="field" for="confirm" style="margin-top:14px">Type it again</label>
+		<input class="text code" type="password" id="confirm" inputmode="numeric" pattern="[0-9]*" maxlength="12" autocomplete="new-password"/>
+	</div>
 	<button class="primary" type="submit" id="loginbtn">Log in</button>
 	<div class="status" id="loginstatus" role="status"></div>
+</form>
+
+<form class="card" id="change" hidden novalidate>
+	<h1>Change passcode</h1>
+	<p class="sub">After changing it, run the Mac installer again so the sync uses the new one.</p>
+	<input class="visually-hidden" type="text" name="username" value="Book library" autocomplete="username" tabindex="-1" aria-hidden="true" readonly/>
+	<label class="field" for="current">Current passcode</label>
+	<input class="text code" type="password" id="current" inputmode="numeric" pattern="[0-9]*" maxlength="12" autocomplete="current-password"/>
+	<label class="field" for="newcode" style="margin-top:14px">New passcode</label>
+	<input class="text code" type="password" id="newcode" name="password" inputmode="numeric" pattern="[0-9]*" maxlength="12" autocomplete="new-password"/>
+	<button class="primary" type="submit" id="changebtn">Save</button>
+	<button class="link" type="button" id="changecancel" style="margin-top:14px">Cancel</button>
+	<div class="status" id="changestatus" role="status"></div>
 </form>
 
 <main class="card" id="library" hidden>
 	<div class="top">
 		<h1>Library</h1>
-		<span><a class="link" href="/">Send a file</a> · <button class="link" id="logout" type="button">Log out</button></span>
+		<span><a class="link" href="/">Send a file</a> · <button class="link" id="changelink" type="button">Passcode</button> · <button class="link" id="logout" type="button">Log out</button></span>
 	</div>
 	<p class="sub">Open this site on your Kobo or Kindle to get a key, then send any book.</p>
 
@@ -208,25 +229,75 @@ function formatSize(bytes) {
 
 // Login
 
-function showLogin() {
+var setupMode = false
+var changeForm = document.getElementById('change')
+
+function showLogin(setup) {
+	setupMode = !!setup
 	libraryEl.hidden = true
+	changeForm.hidden = true
 	loginForm.hidden = false
-	document.getElementById('password').focus()
+	document.getElementById('confirmrow').hidden = !setupMode
+	document.getElementById('loginsub').textContent = setupMode ? 'Choose a passcode of 6 to 12 digits. Your browser can save it for you.' : 'Your Calibre books.'
+	document.getElementById('loginbtn').textContent = setupMode ? 'Save passcode' : 'Log in'
+	document.getElementById('passcode').autocomplete = setupMode ? 'new-password' : 'current-password'
+	document.getElementById('passcode').focus()
 }
 
 loginForm.addEventListener('submit', function (e) {
 	e.preventDefault()
 	var btn = document.getElementById('loginbtn')
 	var status = document.getElementById('loginstatus')
+	var code = document.getElementById('passcode').value.trim()
+	if (!/^[0-9]{6,12}$/.test(code)) {
+		setStatus(status, 'error', 'Use 6 to 12 digits')
+		return
+	}
+	if (setupMode && code !== document.getElementById('confirm').value.trim()) {
+		setStatus(status, 'error', "The two passcodes don't match")
+		return
+	}
 	btn.disabled = true
-	request('POST', '/api/library/login', { password: document.getElementById('password').value }, function (code, data) {
+	request('POST', '/api/library/login', setupMode ? { setup: code } : { passcode: code }, function (status_, data) {
 		btn.disabled = false
-		if (code === 200) {
+		if (status_ === 200) {
 			setStatus(status, '', '')
-			document.getElementById('password').value = ''
+			document.getElementById('passcode').value = ''
+			document.getElementById('confirm').value = ''
 			load()
 		} else {
 			setStatus(status, 'error', data.error || 'Could not log in')
+		}
+	})
+})
+
+document.getElementById('changelink').addEventListener('click', function () {
+	libraryEl.hidden = true
+	changeForm.hidden = false
+	document.getElementById('current').focus()
+})
+
+document.getElementById('changecancel').addEventListener('click', function () {
+	changeForm.hidden = true
+	libraryEl.hidden = false
+})
+
+changeForm.addEventListener('submit', function (e) {
+	e.preventDefault()
+	var status = document.getElementById('changestatus')
+	var code = document.getElementById('newcode').value.trim()
+	if (!/^[0-9]{6,12}$/.test(code)) {
+		setStatus(status, 'error', 'Use 6 to 12 digits')
+		return
+	}
+	request('POST', '/api/library/login', { current: document.getElementById('current').value.trim(), change: code }, function (status_, data) {
+		if (status_ === 200) {
+			setStatus(status, 'success', 'Passcode changed')
+			document.getElementById('current').value = ''
+			document.getElementById('newcode').value = ''
+			setTimeout(function () { changeForm.hidden = true; libraryEl.hidden = false; setStatus(status, '', '') }, 1200)
+		} else {
+			setStatus(status, 'error', data.error || 'Could not change it')
 		}
 	})
 })
@@ -244,7 +315,9 @@ document.getElementById('logout').addEventListener('click', function () {
 function load() {
 	request('GET', '/api/library/books', null, function (code, data) {
 		if (code === 401) {
-			showLogin()
+			request('GET', '/api/library/login', null, function (c, info) {
+				showLogin(c === 200 && info.passcodeSet === false)
+			})
 			return
 		}
 		loginForm.hidden = true
