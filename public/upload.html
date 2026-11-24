@@ -238,7 +238,7 @@
 		<div class="progress" id="progress"><div id="progressbar"></div></div>
 		<div id="uploadstatus" role="status"></div>
 	</form>
-	<p class="footer"><span id="librarynote" hidden>Logged in · books you send are also added to your Calibre library · </span><a href="/library">Library</a></p>
+	<p class="footer"><a href="/library">Library</a></p>
 </main>
 
 <div id="logs"></div>
@@ -382,9 +382,10 @@ function lookUpKey() {
 
 keyinput.addEventListener('input', lookUpKey, false)
 
+// Logged in, everything happens on the library page
 xhr('GET', './api/library/login', function (x) {
 	try {
-		if (JSON.parse(x.responseText).loggedIn) document.getElementById('librarynote').hidden = false
+		if (JSON.parse(x.responseText).loggedIn) location.replace('/library')
 	} catch (err) {}
 })
 lookUpKey()
