@@ -37,7 +37,7 @@
     },
     {
       "source": "/",
-      "destination": "/upload.html"
+      "destination": "/library.html"
     },
     {
       "source": "/library",
