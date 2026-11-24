@@ -8,23 +8,57 @@
     "api/finalize.js": {
       "includeFiles": "bin/{kepubify,kindlegen}",
       "maxDuration": 300
+    },
+    "api/library/send.js": {
+      "includeFiles": "bin/{kepubify,kindlegen}",
+      "maxDuration": 300
+    },
+    "api/library/sync.js": {
+      "maxDuration": 300
     }
   },
   "crons": [
-    { "path": "/api/cleanup", "schedule": "0 4 * * *" }
+    {
+      "path": "/api/cleanup",
+      "schedule": "0 4 * * *"
+    }
   ],
   "rewrites": [
     {
       "source": "/",
-      "has": [{ "type": "header", "key": "user-agent", "value": ".*(Kobo|Kindle|[Tt][Oo][Ll][Ii][Nn][Oo]|eReader).*" }],
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Kobo|Kindle|[Tt][Oo][Ll][Ii][Nn][Oo]|eReader).*"
+        }
+      ],
       "destination": "/download.html"
     },
-    { "source": "/", "destination": "/upload.html" },
-    { "source": "/generate", "destination": "/api/generate" },
-    { "source": "/status/:key", "destination": "/api/status?key=:key" },
+    {
+      "source": "/",
+      "destination": "/upload.html"
+    },
+    {
+      "source": "/library",
+      "destination": "/library.html"
+    },
+    {
+      "source": "/generate",
+      "destination": "/api/generate"
+    },
+    {
+      "source": "/status/:key",
+      "destination": "/api/status?key=:key"
+    },
     {
       "source": "/:filename",
-      "has": [{ "type": "query", "key": "key" }],
+      "has": [
+        {
+          "type": "query",
+          "key": "key"
+        }
+      ],
       "destination": "/api/download?filename=:filename"
     }
   ]

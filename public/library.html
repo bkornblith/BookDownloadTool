@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>Library</title>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<meta name="color-scheme" content="light dark"/>
+	<meta name="robots" content="noindex"/>
+	<style>
+		:root {
+			--bg: #f4f4f6;
+			--card: #ffffff;
+			--text: #18181b;
+			--muted: #6b6b76;
+			--border: #e2e2e8;
+			--accent: #4f46e5;
+			--accent-hover: #4338ca;
+			--accent-soft: #eef2ff;
+			--on-accent: #ffffff;
+			--ok-bg: #ecfdf3;
+			--ok-text: #05603a;
+			--err-bg: #fef3f2;
+			--err-text: #b42318;
+		}
+		@media (prefers-color-scheme: dark) {
+			:root {
+				--bg: #0f0f12;
+				--card: #1a1a1f;
+				--text: #f2f2f5;
+				--muted: #9b9ba6;
+				--border: #2c2c34;
+				--accent: #818cf8;
+				--accent-hover: #a5b4fc;
+				--accent-soft: #23233a;
+				--on-accent: #0f0f12;
+				--ok-bg: #0f2a1c;
+				--ok-text: #6ce9a6;
+				--err-bg: #2d1414;
+				--err-text: #fda29b;
+			}
+		}
+		* { box-sizing: border-box; }
+		[hidden] { display: none !important; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			display: flex;
+			align-items: flex-start;
+			justify-content: center;
+			padding: 24px 16px;
+			background: var(--bg);
+			color: var(--text);
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+			line-height: 1.5;
+		}
+		.card {
+			width: 100%;
+			max-width: 560px;
+			background: var(--card);
+			border: 1px solid var(--border);
+			border-radius: 20px;
+			padding: 32px 28px;
+			box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.06);
+		}
+		#login.card { max-width: 380px; margin-top: 12vh; }
+		.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+		h1 { margin: 0 0 4px; font-size: 24px; font-weight: 650; letter-spacing: -0.02em; }
+		.sub { margin: 0 0 24px; color: var(--muted); font-size: 15px; }
+		.link { background: none; border: none; padding: 0; font: inherit; font-size: 14px; color: var(--muted); cursor: pointer; text-decoration: none; }
+		.link:hover { color: var(--accent); }
+		label.field { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+		input.text {
+			width: 100%;
+			padding: 12px 14px;
+			font: inherit;
+			font-size: 16px;
+			color: var(--text);
+			background: var(--bg);
+			border: 1px solid var(--border);
+			border-radius: 12px;
+			outline: none;
+			transition: border-color .15s, box-shadow .15s;
+		}
+		input.text:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+		#keyinput {
+			font: 600 24px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+			letter-spacing: 0.4em;
+			text-indent: 0.4em;
+			text-align: center;
+			text-transform: uppercase;
+		}
+		#keyinput::placeholder { color: var(--border); }
+		.keyhint { min-height: 20px; margin: 6px 0 18px; font-size: 13px; color: var(--muted); text-align: center; }
+		.keyhint.ok { color: var(--ok-text); }
+		.keyhint.bad { color: var(--err-text); }
+		.primary {
+			width: 100%;
+			margin-top: 16px;
+			padding: 13px;
+			font: inherit;
+			font-size: 16px;
+			font-weight: 600;
+			color: var(--on-accent);
+			background: var(--accent);
+			border: none;
+			border-radius: 12px;
+			cursor: pointer;
+		}
+		.primary:hover { background: var(--accent-hover); }
+		.primary:disabled { opacity: .6; cursor: default; }
+		.status { margin-top: 14px; padding: 12px 14px; border-radius: 12px; font-size: 14px; }
+		.status:empty { display: none; }
+		.status.info { background: var(--accent-soft); }
+		.status.success { background: var(--ok-bg); color: var(--ok-text); }
+		.status.error { background: var(--err-bg); color: var(--err-text); }
+		.count { margin: 10px 2px 4px; font-size: 13px; color: var(--muted); }
+		ul.books { list-style: none; margin: 0; padding: 0; }
+		ul.books li {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 12px 2px;
+			border-top: 1px solid var(--border);
+		}
+		.book { flex: 1; min-width: 0; }
+		.book strong { display: block; font-size: 15px; font-weight: 600; }
+		.book span { display: block; font-size: 13px; color: var(--muted); }
+		.send {
+			flex: none;
+			padding: 7px 14px;
+			font: inherit;
+			font-size: 14px;
+			font-weight: 600;
+			color: var(--accent);
+			background: var(--accent-soft);
+			border: none;
+			border-radius: 999px;
+			cursor: pointer;
+		}
+		.send:hover:not(:disabled) { color: var(--on-accent); background: var(--accent); }
+		.send:disabled { opacity: .45; cursor: default; }
+	</style>
+</head>
+<body>
+
+<form class="card" id="login" hidden novalidate>
+	<h1>Library</h1>
+	<p class="sub">Your Calibre books.</p>
+	<label class="field" for="password">Password</label>
+	<input class="text" type="password" id="password" autocomplete="current-password" required/>
+	<button class="primary" type="submit" id="loginbtn">Log in</button>
+	<div class="status" id="loginstatus" role="status"></div>
+</form>
+
+<main class="card" id="library" hidden>
+	<div class="top">
+		<h1>Library</h1>
+		<span><a class="link" href="/">Send a file</a> · <button class="link" id="logout" type="button">Log out</button></span>
+	</div>
+	<p class="sub">Open this site on your Kobo or Kindle to get a key, then send any book.</p>
+
+	<label class="field" for="keyinput">Key</label>
+	<input class="text" type="text" id="keyinput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="••••" maxlength="4"/>
+	<div id="keyhint" class="keyhint"></div>
+
+	<input class="text" type="search" id="search" placeholder="Search title, author or series" autocomplete="off"/>
+	<div class="status" id="status" role="status"></div>
+	<div class="count" id="count"></div>
+	<ul class="books" id="books"></ul>
+</main>
+
+<script>
+'use strict'
+var loginForm = document.getElementById('login')
+var libraryEl = document.getElementById('library')
+var keyinput = document.getElementById('keyinput')
+var keyhint = document.getElementById('keyhint')
+var search = document.getElementById('search')
+var statusEl = document.getElementById('status')
+var countEl = document.getElementById('count')
+var booksEl = document.getElementById('books')
+var books = []
+var device = null  // the e-reader showing the key, once found
+var sending = false
+
+function request(method, url, data, cb) {
+	var x = new XMLHttpRequest()
+	x.open(method, url, true)
+	if (data) x.setRequestHeader('Content-Type', 'application/json')
+	x.onload = x.onerror = function () {
+		var json = null
+		try { json = JSON.parse(x.responseText) } catch (err) {}
+		cb(x.status, json || {})
+	}
+	x.send(data ? JSON.stringify(data) : null)
+}
+
+function setStatus(el, kind, text, html) {
+	el.className = 'status ' + (kind || '')
+	if (html) el.innerHTML = text
+	else el.textContent = text || ''
+}
+
+function formatSize(bytes) {
+	if (bytes < 1024 * 1024) return Math.ceil(bytes / 1024) + ' KB'
+	return (bytes / 1024 / 1024).toFixed(1) + ' MB'
+}
+
+// Login
+
+function showLogin() {
+	libraryEl.hidden = true
+	loginForm.hidden = false
+	document.getElementById('password').focus()
+}
+
+loginForm.addEventListener('submit', function (e) {
+	e.preventDefault()
+	var btn = document.getElementById('loginbtn')
+	var status = document.getElementById('loginstatus')
+	btn.disabled = true
+	request('POST', '/api/library/login', { password: document.getElementById('password').value }, function (code, data) {
+		btn.disabled = false
+		if (code === 200) {
+			setStatus(status, '', '')
+			document.getElementById('password').value = ''
+			load()
+		} else {
+			setStatus(status, 'error', data.error || 'Could not log in')
+		}
+	})
+})
+
+document.getElementById('logout').addEventListener('click', function () {
+	request('POST', '/api/library/login', { logout: true }, function () {
+		books = []
+		render()
+		showLogin()
+	})
+})
+
+// Books
+
+function load() {
+	request('GET', '/api/library/books', null, function (code, data) {
+		if (code === 401) {
+			showLogin()
+			return
+		}
+		loginForm.hidden = true
+		libraryEl.hidden = false
+		if (code !== 200) {
+			setStatus(statusEl, 'error', data.error || 'Could not load the library')
+			return
+		}
+		books = data.books || []
+		render()
+	})
+}
+
+function matches(book, words) {
+	var text = (book.title + ' ' + book.authors + ' ' + book.series).toLowerCase()
+	for (var i = 0; i < words.length; i++) {
+		if (text.indexOf(words[i]) < 0) return false
+	}
+	return true
+}
+
+function render() {
+	var words = search.value.toLowerCase().split(/\s+/).filter(Boolean)
+	var shown = books.filter(function (b) { return matches(b, words) })
+	booksEl.textContent = ''
+	shown.forEach(function (book) {
+		var li = document.createElement('li')
+		var info = document.createElement('div')
+		info.className = 'book'
+		var title = document.createElement('strong')
+		title.textContent = book.title
+		var meta = document.createElement('span')
+		var parts = []
+		if (book.authors) parts.push(book.authors)
+		if (book.series) parts.push(book.series + (book.seriesIndex != null ? ' #' + book.seriesIndex : ''))
+		parts.push(book.format + ' · ' + formatSize(book.size))
+		meta.textContent = parts.join(' · ')
+		info.appendChild(title)
+		info.appendChild(meta)
+		var btn = document.createElement('button')
+		btn.className = 'send'
+		btn.type = 'button'
+		btn.textContent = 'Send'
+		btn.disabled = !device || sending
+		btn.addEventListener('click', function () { send(book, btn) })
+		li.appendChild(info)
+		li.appendChild(btn)
+		booksEl.appendChild(li)
+	})
+	countEl.textContent = books.length === 0 ? 'No books yet. Run the Calibre sync on your computer to add them.' :
+		(shown.length === books.length ? books.length + ' books' : shown.length + ' of ' + books.length + ' books')
+}
+
+function setSendButtons() {
+	var buttons = booksEl.querySelectorAll('.send')
+	for (var i = 0; i < buttons.length; i++) buttons[i].disabled = !device || sending
+}
+
+search.addEventListener('input', render)
+
+// Key
+
+var lookedUpKey = null
+
+function setKeyHint(kind, text) {
+	keyhint.className = 'keyhint' + (kind ? ' ' + kind : '')
+	keyhint.textContent = text || ''
+}
+
+function lookUpKey() {
+	var key = keyinput.value.trim().toUpperCase()
+	if (key.length !== 4) {
+		lookedUpKey = null
+		device = null
+		setSendButtons()
+		setKeyHint('', key ? '' : 'Enter the key to send books')
+		return
+	}
+	if (key === lookedUpKey) return
+	lookedUpKey = key
+	request('GET', '/api/device?key=' + encodeURIComponent(key), null, function (code, data) {
+		if (keyinput.value.trim().toUpperCase() !== key) return
+		if (code !== 200 || !data.device) {
+			device = null
+			setKeyHint('bad', 'No e-reader is showing this key')
+		} else {
+			device = data.device
+			setKeyHint('ok', device === 'kobo' ? 'Kobo found · EPUBs are converted for Kobo' : (device === 'kindle' ? 'Kindle found · EPUBs are converted to MOBI' : 'E-reader found'))
+		}
+		setSendButtons()
+	})
+}
+
+keyinput.addEventListener('input', lookUpKey)
+
+function send(book, btn) {
+	sending = true
+	setSendButtons()
+	btn.textContent = 'Sending…'
+	setStatus(statusEl, 'info', 'Sending ' + book.title + '…')
+	request('POST', '/api/library/send', { id: book.id, key: keyinput.value.trim().toUpperCase() }, function (code, data) {
+		sending = false
+		btn.textContent = 'Send'
+		setSendButtons()
+		if (code === 200) setStatus(statusEl, 'success', data.message, true)
+		else if (code === 401) showLogin()
+		else setStatus(statusEl, 'error', data.error || 'Sending failed (HTTP ' + code + ')')
+	})
+}
+
+lookUpKey()
+load()
+</script>
+</body>
+</html>
