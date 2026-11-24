@@ -144,6 +144,62 @@
 		}
 		.send:hover:not(:disabled) { color: var(--on-accent); background: var(--accent); }
 		.send:disabled { opacity: .45; cursor: default; }
+		/* Library */
+		#library { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 18px; padding-top: 32px; }
+		#library.wide { max-width: 1120px; }
+		.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+		.bar h1 { margin: 0; font-size: 22px; }
+		.reader { position: relative; }
+		.pill { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 12px; font: inherit; font-size: 14px; font-weight: 500; color: var(--text); background: var(--card); border: 1px solid var(--border); border-radius: 999px; cursor: pointer; white-space: nowrap; }
+		.pill:hover { border-color: var(--accent); }
+		.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); opacity: .5; }
+		.dot.on { background: #16a34a; opacity: 1; }
+		.popover { position: absolute; right: 0; top: 44px; z-index: 10; width: 280px; padding: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,.12); }
+		.hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+		.hint.ok { color: var(--ok-text); }
+		.hint.bad { color: var(--err-text); }
+		.searchbox { display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 18px; color: var(--muted); background: var(--card); border: 1px solid var(--border); border-radius: 16px; transition: border-color .15s, box-shadow .15s; }
+		.searchbox:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+		.searchbox input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font: inherit; font-size: 19px; font-weight: 500; color: var(--text); }
+		.searchbox input::-webkit-search-cancel-button { display: none; }
+		.count { font-size: 13px; color: var(--muted); white-space: nowrap; }
+		.label { margin: 6px 4px -6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+		.label:empty { display: none; }
+		ul.books { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+		ul.books:empty { display: none; }
+		ul.books li { padding: 10px 12px 10px 18px; min-height: 40px; border-top: 1px solid var(--border); }
+		ul.books li:first-child { border-top: none; }
+		.send { white-space: nowrap; }
+		.send.sent { color: var(--ok-text); background: var(--ok-bg); }
+		.browse { display: block; margin: 18px auto 0; font-weight: 500; color: var(--accent); }
+		.tabletop { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+		.tabletop .filter { flex: 1; min-width: 200px; max-width: 520px; }
+		.tablewrap { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow-x: auto; }
+		table { width: 100%; border-collapse: collapse; font-size: 14px; }
+		th { position: sticky; top: 0; background: var(--card); text-align: left; padding: 0; border-bottom: 1px solid var(--border); }
+		th button { width: 100%; padding: 12px 14px; font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; text-align: left; color: var(--muted); background: none; border: none; cursor: pointer; white-space: nowrap; }
+		th button:hover { color: var(--text); }
+		td { padding: 10px 14px; border-top: 1px solid var(--border); vertical-align: middle; }
+		tbody tr:first-child td { border-top: none; }
+		tbody tr { cursor: default; }
+		tbody tr:hover { background: var(--bg); }
+		tbody tr.selected { background: var(--accent-soft); }
+		td.strong { font-weight: 500; }
+		td.muted { color: var(--muted); }
+		td.nowrap { white-space: nowrap; }
+		td.action { width: 1%; text-align: right; }
+		td.action .send { visibility: hidden; }
+		tbody tr:hover td.action .send, tbody tr.selected td.action .send, td.action .send.sent, td.action .send:disabled, td.action .send:focus-visible { visibility: visible; }
+		.primary-send { color: var(--on-accent); background: var(--accent); }
+		@media (hover: none) { td.action .send { visibility: visible; } }
+		@media (max-width: 720px) { .hide-narrow { display: none; } }
+		.foot { margin: 12px 0 24px; text-align: center; font-size: 13px; color: var(--muted); }
+		.foot .link { font-size: 13px; }
+		.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); max-width: min(560px, calc(100% - 32px)); padding: 12px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; box-shadow: 0 12px 32px rgba(0,0,0,.15); }
+		.toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; cursor: pointer; }
+		.toast.success { background: var(--ok-bg); color: var(--ok-text); }
+		.toast.error { background: var(--err-bg); color: var(--err-text); }
+		.toast.info { background: var(--accent-soft); color: var(--text); }
 	</style>
 </head>
 <body>
@@ -182,25 +238,54 @@
 	<div class="status" id="changestatus" role="status"></div>
 </form>
 
-<main class="card" id="library" hidden>
-	<div class="top">
+<main id="library" hidden>
+	<header class="bar">
 		<h1>Library</h1>
-		<span><a class="link" href="/">Send a file</a> · <button class="link" id="changelink" type="button">Passcode</button> · <button class="link" id="logout" type="button">Log out</button></span>
-	</div>
-	<p class="sub">Open this site on your Kobo or Kindle to get a key, then send any book.</p>
-
-	<label class="field" for="keyinput">Key</label>
-	<input class="text" type="text" id="keyinput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="••••" maxlength="4"/>
-	<div id="keyhint" class="keyhint"></div>
+		<div class="reader">
+			<button class="pill" type="button" id="pill" aria-expanded="false" aria-controls="connect"><span class="dot" id="dot"></span><span id="pilltext">Connect e-reader</span></button>
+			<div class="popover" id="connect" hidden>
+				<label class="field" for="keyinput">E-reader key</label>
+				<input class="text code" type="text" id="keyinput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="••••" maxlength="4"/>
+				<p class="hint" id="keyhint">Open books.bharrisk.com on your Kobo or Kindle to see its key.</p>
+			</div>
+		</div>
+	</header>
 
 	<div class="banner" id="passkeybanner" hidden>
 		<span>Log in with Touch ID or Face ID next time?</span>
 		<button class="send" type="button" id="bannerbtn">Set up</button>
 	</div>
-	<input class="text" type="search" id="search" placeholder="Search title, author or series" autocomplete="off"/>
-	<div class="status" id="status" role="status"></div>
-	<div class="count" id="count"></div>
-	<ul class="books" id="books"></ul>
+	<div class="status" id="passkeystatus" role="status"></div>
+
+	<section id="searchview">
+		<label class="visually-hidden" for="search">Search your library</label>
+		<div class="searchbox">
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+			<input type="search" id="search" placeholder="Search title, author or series" autocomplete="off" spellcheck="false"/>
+			<span class="count" id="count"></span>
+		</div>
+		<p class="label" id="listlabel"></p>
+		<ul class="books" id="books"></ul>
+		<button class="link browse" type="button" id="browse">Browse the whole library →</button>
+	</section>
+
+	<section id="tableview" hidden>
+		<div class="tabletop">
+			<button class="link" type="button" id="back">← Search</button>
+			<label class="visually-hidden" for="filter">Filter</label>
+			<input class="text filter" type="search" id="filter" placeholder="Filter by title, author or series" autocomplete="off" spellcheck="false"/>
+			<span class="count" id="tablecount"></span>
+		</div>
+		<div class="tablewrap">
+			<table>
+				<thead><tr id="headrow"></tr></thead>
+				<tbody id="rows"></tbody>
+			</table>
+		</div>
+	</section>
+
+	<footer class="foot"><a class="link" href="/">Send a file</a> · <button class="link" id="changelink" type="button">Passcode</button> · <button class="link" id="logout" type="button">Log out</button></footer>
+	<div class="toast" id="status" role="status"></div>
 </main>
 
 <script>
@@ -210,12 +295,15 @@ var libraryEl = document.getElementById('library')
 var keyinput = document.getElementById('keyinput')
 var keyhint = document.getElementById('keyhint')
 var search = document.getElementById('search')
+var filterEl = document.getElementById('filter')
+var searchEl = document.getElementById('searchview')
+var tableEl = document.getElementById('tableview')
 var statusEl = document.getElementById('status')
 var countEl = document.getElementById('count')
 var booksEl = document.getElementById('books')
 var books = []
 var device = null  // the e-reader showing the key, once found
-var sending = false
+var sendState = {}  // book id -> 'sending' | 'sent'
 
 function request(method, url, data, cb) {
 	var x = new XMLHttpRequest()
@@ -336,7 +424,7 @@ document.getElementById('passkeybtn').addEventListener('click', function () {
 	passkeyLogin(document.getElementById('loginstatus'))
 })
 document.getElementById('bannerbtn').addEventListener('click', function () {
-	addPasskey(statusEl, function () { document.getElementById('passkeybanner').hidden = true })
+	addPasskey(document.getElementById('passkeystatus'), function () { document.getElementById('passkeybanner').hidden = true })
 })
 document.getElementById('addpasskey').addEventListener('click', function () {
 	addPasskey(document.getElementById('changestatus'))
@@ -442,77 +530,199 @@ function load() {
 			document.getElementById('passkeybanner').hidden = !passkeySupported || passkeyCount > 0
 		})
 		if (code !== 200) {
-			setStatus(statusEl, 'error', data.error || 'Could not load the library')
+			toast('error', data.error || 'Could not load the library')
 			return
 		}
 		books = data.books || []
+		books.forEach(function (b) {
+			b.text = (b.title + ' ' + b.authors + ' ' + b.series).toLowerCase()
+		})
 		render()
+		renderTable()
+		if (!tableEl.hidden) filterEl.focus()
+		else if (window.matchMedia('(hover: hover)').matches) search.focus()
 	})
 }
 
-function matches(book, words) {
-	var text = (book.title + ' ' + book.authors + ' ' + book.series).toLowerCase()
-	for (var i = 0; i < words.length; i++) {
-		if (text.indexOf(words[i]) < 0) return false
-	}
-	return true
+function filtered(query) {
+	var words = query.toLowerCase().split(/\s+/).filter(Boolean)
+	return books.filter(function (b) {
+		for (var i = 0; i < words.length; i++) if (b.text.indexOf(words[i]) < 0) return false
+		return true
+	})
 }
 
+function formatDate(value, withDay) {
+	if (!value) return ''
+	var d = new Date(value)
+	var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+	if (!withDay) return months[d.getUTCMonth()] + ' ' + d.getUTCFullYear()
+	return ('0' + d.getDate()).slice(-2) + ' ' + months[d.getMonth()] + ' ' + d.getFullYear()
+}
+
+function seriesText(book) {
+	if (!book.series) return ''
+	return book.series + (book.seriesIndex != null ? ' ' + book.seriesIndex : '')
+}
+
+function sendButton(book, primary) {
+	var btn = document.createElement('button')
+	btn.type = 'button'
+	btn.className = primary ? 'send primary-send' : 'send'
+	var state = sendState[book.id]
+	btn.textContent = state === 'sending' ? 'Sending…' : (state === 'sent' ? 'Sent ✓' : 'Send')
+	if (state === 'sent') btn.classList.add('sent')
+	btn.disabled = state === 'sending'
+	btn.addEventListener('click', function (e) {
+		e.stopPropagation()
+		send(book)
+	})
+	return btn
+}
+
+// Search view: recently added when empty, matches as you type
 function render() {
-	var words = search.value.toLowerCase().split(/\s+/).filter(Boolean)
-	var shown = books.filter(function (b) { return matches(b, words) })
+	var query = search.value.trim()
+	var shown = query ? filtered(query) : books.slice(0, 8)
 	booksEl.textContent = ''
-	shown.forEach(function (book) {
+	shown.slice(0, 50).forEach(function (book) {
 		var li = document.createElement('li')
 		var info = document.createElement('div')
 		info.className = 'book'
 		var title = document.createElement('strong')
 		title.textContent = book.title
 		var meta = document.createElement('span')
-		var parts = []
-		if (book.authors) parts.push(book.authors)
-		if (book.series) parts.push(book.series + (book.seriesIndex != null ? ' #' + book.seriesIndex : ''))
-		parts.push(book.format + ' · ' + formatSize(book.size))
-		meta.textContent = parts.join(' · ')
+		meta.textContent = [book.authors, seriesText(book)].filter(Boolean).join(' · ')
 		info.appendChild(title)
 		info.appendChild(meta)
-		var btn = document.createElement('button')
-		btn.className = 'send'
-		btn.type = 'button'
-		btn.textContent = 'Send'
-		btn.disabled = !device || sending
-		btn.addEventListener('click', function () { send(book, btn) })
 		li.appendChild(info)
-		li.appendChild(btn)
+		li.appendChild(sendButton(book))
 		booksEl.appendChild(li)
 	})
-	countEl.textContent = books.length === 0 ? 'No books yet. Run the Calibre sync on your computer to add them.' :
-		(shown.length === books.length ? books.length + ' books' : shown.length + ' of ' + books.length + ' books')
+	document.getElementById('listlabel').textContent = books.length === 0 ? 'No books yet. Run the Calibre sync on your Mac to add them.' :
+		(query ? (shown.length ? '' : 'Nothing matches “' + query + '”') : 'Recently added')
+	countEl.textContent = query && books.length ? shown.length + ' of ' + books.length : ''
 }
 
-function setSendButtons() {
-	var buttons = booksEl.querySelectorAll('.send')
-	for (var i = 0; i < buttons.length; i++) buttons[i].disabled = !device || sending
+search.addEventListener('input', function () {
+	filterEl.value = search.value
+	render()
+})
+
+// Table view: the whole library, sortable, filter as you type
+var columns = [
+	{ key: 'added', label: 'Added', get: function (b) { return b.added || '' }, show: function (b) { return formatDate(b.added, true) }, cls: 'muted nowrap' },
+	{ key: 'title', label: 'Title', get: function (b) { return b.title.toLowerCase() }, show: function (b) { return b.title }, cls: 'strong' },
+	{ key: 'author', label: 'Author', get: function (b) { return b.authors.toLowerCase() }, show: function (b) { return b.authors }, cls: '' },
+	{ key: 'series', label: 'Series', get: function (b) { return b.series ? b.series.toLowerCase() + '\u0000' + String(1000 + (b.seriesIndex || 0)) : '￿' }, show: seriesText, cls: 'muted hide-narrow' },
+	{ key: 'published', label: 'Published', get: function (b) { return b.published || '' }, show: function (b) { return formatDate(b.published) }, cls: 'muted nowrap hide-narrow' }
+]
+var sortKey = 'added'
+var sortDesc = true
+var selectedId = null
+
+function renderTable() {
+	var head = document.getElementById('headrow')
+	head.textContent = ''
+	columns.forEach(function (col) {
+		var th = document.createElement('th')
+		th.className = col.cls.indexOf('hide-narrow') >= 0 ? 'hide-narrow' : ''
+		th.setAttribute('aria-sort', col.key === sortKey ? (sortDesc ? 'descending' : 'ascending') : 'none')
+		var btn = document.createElement('button')
+		btn.type = 'button'
+		btn.textContent = col.label + (col.key === sortKey ? (sortDesc ? ' ↓' : ' ↑') : '')
+		btn.addEventListener('click', function () {
+			if (sortKey === col.key) sortDesc = !sortDesc
+			else { sortKey = col.key; sortDesc = col.key === 'added' || col.key === 'published' }
+			renderTable()
+		})
+		th.appendChild(btn)
+		head.appendChild(th)
+	})
+	head.appendChild(document.createElement('th'))
+
+	var col = columns.filter(function (c) { return c.key === sortKey })[0]
+	var shown = filtered(filterEl.value.trim()).sort(function (a, b) {
+		var x = col.get(a), y = col.get(b)
+		var r = x < y ? -1 : (x > y ? 1 : 0)
+		return sortDesc ? -r : r
+	})
+	var body = document.getElementById('rows')
+	body.textContent = ''
+	shown.forEach(function (book) {
+		var tr = document.createElement('tr')
+		if (book.id === selectedId) tr.className = 'selected'
+		columns.forEach(function (c) {
+			var td = document.createElement('td')
+			td.className = c.cls
+			td.textContent = c.show(book)
+			tr.appendChild(td)
+		})
+		var td = document.createElement('td')
+		td.className = 'action'
+		td.appendChild(sendButton(book, true))
+		tr.appendChild(td)
+		tr.addEventListener('click', function () {
+			selectedId = book.id
+			var prev = body.querySelector('tr.selected')
+			if (prev) prev.classList.remove('selected')
+			tr.classList.add('selected')
+		})
+		body.appendChild(tr)
+	})
+	document.getElementById('tablecount').textContent = shown.length === books.length ? books.length + ' books' : shown.length + ' of ' + books.length
 }
 
-search.addEventListener('input', render)
+filterEl.addEventListener('input', function () {
+	search.value = filterEl.value
+	render()
+	renderTable()
+})
 
-// Key
+function showTable(show) {
+	tableEl.hidden = !show
+	searchEl.hidden = show
+	libraryEl.classList.toggle('wide', show)
+	if (show) { renderTable(); filterEl.focus() } else { render(); search.focus() }
+	try { history.replaceState(null, '', show ? '#all' : location.pathname) } catch (err) {}
+}
 
+document.getElementById('browse').addEventListener('click', function () { showTable(true) })
+document.getElementById('back').addEventListener('click', function () { showTable(false) })
+if (location.hash === '#all') { tableEl.hidden = false; searchEl.hidden = true; libraryEl.classList.add('wide') }
+
+// E-reader: the pill shows which one books go to. Its key is remembered
+// for the hour it lasts.
 var lookedUpKey = null
+var pendingBook = null
+var pill = document.getElementById('pill')
+var popover = document.getElementById('connect')
 
-function setKeyHint(kind, text) {
-	keyhint.className = 'keyhint' + (kind ? ' ' + kind : '')
-	keyhint.textContent = text || ''
+function openConnect(open) {
+	popover.hidden = !open
+	pill.setAttribute('aria-expanded', open ? 'true' : 'false')
+	if (open) keyinput.focus()
+}
+
+pill.addEventListener('click', function () { openConnect(popover.hidden) })
+document.addEventListener('click', function (e) {
+	if (!popover.hidden && !popover.contains(e.target) && !pill.contains(e.target) && !(e.target.classList && e.target.classList.contains('send'))) openConnect(false)
+})
+
+function setDevice(found, key) {
+	device = found
+	var name = found === 'kobo' ? 'Kobo' : (found === 'kindle' ? 'Kindle' : 'E-reader')
+	document.getElementById('dot').className = found ? 'dot on' : 'dot'
+	document.getElementById('pilltext').textContent = found ? name + ' · ' + key : 'Connect e-reader'
 }
 
 function lookUpKey() {
 	var key = keyinput.value.trim().toUpperCase()
 	if (key.length !== 4) {
 		lookedUpKey = null
-		device = null
-		setSendButtons()
-		setKeyHint('', key ? '' : 'Enter the key to send books')
+		setDevice(null)
+		keyhint.className = 'hint'
+		keyhint.textContent = 'Open books.bharrisk.com on your Kobo or Kindle to see its key.'
 		return
 	}
 	if (key === lookedUpKey) return
@@ -520,33 +730,72 @@ function lookUpKey() {
 	request('GET', '/api/device?key=' + encodeURIComponent(key), null, function (code, data) {
 		if (keyinput.value.trim().toUpperCase() !== key) return
 		if (code !== 200 || !data.device) {
-			device = null
-			setKeyHint('bad', 'No e-reader is showing this key')
-		} else {
-			device = data.device
-			setKeyHint('ok', device === 'kobo' ? 'Kobo found · EPUBs are converted for Kobo' : (device === 'kindle' ? 'Kindle found · EPUBs are converted to MOBI' : 'E-reader found'))
+			setDevice(null)
+			keyhint.className = 'hint bad'
+			keyhint.textContent = 'No e-reader is showing ' + key + '. Keys last an hour.'
+			try { localStorage.removeItem('readerKey') } catch (err) {}
+			return
 		}
-		setSendButtons()
+		setDevice(data.device, key)
+		keyhint.className = 'hint ok'
+		keyhint.textContent = data.device === 'kobo' ? 'Kobo connected. EPUBs are converted for Kobo.' : (data.device === 'kindle' ? 'Kindle connected. EPUBs are converted to MOBI.' : 'E-reader connected.')
+		try { localStorage.setItem('readerKey', JSON.stringify({ key: key, at: Date.now() })) } catch (err) {}
+		if (pendingBook) {
+			openConnect(false)
+			var book = pendingBook
+			pendingBook = null
+			send(book)
+		} else {
+			setTimeout(function () { openConnect(false) }, 700)
+		}
 	})
 }
 
 keyinput.addEventListener('input', lookUpKey)
 
-function send(book, btn) {
-	sending = true
-	setSendButtons()
-	btn.textContent = 'Sending…'
-	setStatus(statusEl, 'info', 'Sending ' + book.title + '…')
-	request('POST', '/api/library/send', { id: book.id, key: keyinput.value.trim().toUpperCase() }, function (code, data) {
-		sending = false
-		btn.textContent = 'Send'
-		setSendButtons()
-		if (code === 200) setStatus(statusEl, 'success', data.message, true)
-		else if (code === 401) showLogin()
-		else setStatus(statusEl, 'error', data.error || 'Sending failed (HTTP ' + code + ')')
+function toast(kind, text, html) {
+	setStatus(statusEl, 'toast ' + kind, text, html)
+	statusEl.className = 'toast show ' + kind
+	clearTimeout(toast.timer)
+	if (kind !== 'error') toast.timer = setTimeout(function () { statusEl.className = 'toast' }, 6000)
+}
+statusEl.addEventListener('click', function () { statusEl.className = 'toast' })
+
+function refresh() {
+	render()
+	if (!tableEl.hidden) renderTable()
+}
+
+function send(book) {
+	if (!device) {
+		pendingBook = book
+		openConnect(true)
+		keyhint.className = 'hint'
+		keyhint.textContent = 'Enter the key your e-reader shows, and “' + book.title + '” will send.'
+		return
+	}
+	sendState[book.id] = 'sending'
+	refresh()
+	request('POST', '/api/library/send', { id: book.id, key: lookedUpKey }, function (code, data) {
+		if (code === 200) {
+			sendState[book.id] = 'sent'
+			toast('success', data.message, true)
+		} else if (code === 401) {
+			delete sendState[book.id]
+			showLogin()
+		} else {
+			delete sendState[book.id]
+			toast('error', data.error || 'Sending failed (HTTP ' + code + ')')
+			if (/key/i.test(data.error || '')) { setDevice(null); lookedUpKey = null; openConnect(true) }
+		}
+		refresh()
 	})
 }
 
+try {
+	var saved = JSON.parse(localStorage.getItem('readerKey') || 'null')
+	if (saved && Date.now() - saved.at < 60 * 60 * 1000) keyinput.value = saved.key
+} catch (err) {}
 lookUpKey()
 load()
 </script>
