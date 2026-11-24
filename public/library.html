@@ -642,7 +642,7 @@ function render() {
 		var title = document.createElement('strong')
 		title.textContent = book.title
 		var meta = document.createElement('span')
-		meta.textContent = [book.authors, seriesText(book)].filter(Boolean).join(' · ')
+		meta.textContent = [book.authors, seriesText(book), book.published ? 'Published ' + formatDate(book.published) : ''].filter(Boolean).join(' · ')
 		info.appendChild(title)
 		info.appendChild(meta)
 		li.appendChild(info)
