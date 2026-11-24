@@ -1,16 +1,17 @@
 const passkeys = require('../../lib/passkeys')
-const { validPasscode, storedHash, checkPasscode, setPasscode, setSession, clearSession, isLoggedIn } = require('../../lib/auth')
+const { passcodeLoginAllowed, createSyncKey, hasSyncKey, validPasscode, storedHash, checkPasscode, setPasscode, setSession, clearSession, isLoggedIn } = require('../../lib/auth')
 
 // GET                          { loggedIn, passcodeSet, passkeys }
 // POST {passcode}              logs in
 // POST {setup: passcode}       sets the first passcode (only while none is set)
 // POST {current, change}       changes it (logged in, with the current passcode)
+// POST {syncKey: true}         creates a new sync key for the Mac (logged in)
 // POST {logout: true}          logs out
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
   try {
     if (req.method === 'GET') {
-      res.json({ loggedIn: await isLoggedIn(req), passcodeSet: !!(await storedHash()), passkeys: await passkeys.count() })
+      res.json({ loggedIn: await isLoggedIn(req), passcodeSet: !!(await storedHash()), passkeys: await passkeys.count(), syncKey: await hasSyncKey(), passcodeLogin: await passcodeLoginAllowed() })
       return
     }
     if (req.method !== 'POST') {
@@ -18,6 +19,15 @@ module.exports = async (req, res) => {
       return
     }
     const body = req.body || {}
+    if (body.syncKey) {
+      // A new key for the Mac sync, shown once; it replaces any earlier one
+      if (!await isLoggedIn(req)) {
+        res.status(401).json({ error: 'Not logged in' })
+        return
+      }
+      res.json({ syncKey: await createSyncKey() })
+      return
+    }
     if (body.logout) {
       clearSession(res)
       res.json({ ok: true })
@@ -30,8 +40,9 @@ module.exports = async (req, res) => {
         return
       }
       if (body.change !== undefined) {
-        if (!await isLoggedIn(req) || await checkPasscode(String(body.current || '')) !== 'ok') {
-          res.status(401).json({ error: 'Current passcode is wrong' })
+        const check = await isLoggedIn(req) ? await checkPasscode(String(body.current || '')) : 'wrong'
+        if (check !== 'ok') {
+          res.status(401).json({ error: check === 'off' ? 'Passcode login is off' : 'Current passcode is wrong' })
           return
         }
       }
@@ -49,6 +60,8 @@ module.exports = async (req, res) => {
       res.json({ ok: true })
     } else if (result === 'locked') {
       res.status(429).json({ error: 'Too many wrong passcodes. Try again in 15 minutes.' })
+    } else if (result === 'off') {
+      res.status(403).json({ error: 'Passcode login is off. Use Touch ID or Face ID.' })
     } else if (result === 'unset') {
       res.status(409).json({ error: 'No passcode is set yet' })
     } else {

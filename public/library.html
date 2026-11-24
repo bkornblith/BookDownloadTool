@@ -193,6 +193,10 @@
 		.primary-send { color: var(--on-accent); background: var(--accent); }
 		@media (hover: none) { td.action .send { visibility: visible; } }
 		@media (max-width: 720px) { .hide-narrow { display: none; } }
+		.selbar { position: sticky; bottom: 16px; display: flex; align-items: center; gap: 16px; padding: 10px 10px 10px 20px; background: var(--text); color: var(--bg); border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.2); font-size: 14px; font-weight: 500; }
+		.selbar #selcount { flex: 1; }
+		.selbar .link { color: var(--bg); opacity: .75; }
+		.selbar .primary { width: auto; margin: 0; padding: 10px 18px; font-size: 14px; }
 		.foot { margin: 12px 0 24px; text-align: center; font-size: 13px; color: var(--muted); }
 		.foot .link { font-size: 13px; }
 		.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); max-width: min(560px, calc(100% - 32px)); padding: 12px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; box-shadow: 0 12px 32px rgba(0,0,0,.15); }
@@ -209,8 +213,9 @@
 	<p class="sub" id="loginsub">Your Calibre books.</p>
 	<div id="passkeyrow" hidden>
 		<button class="primary" type="button" id="passkeybtn" style="margin-top:0">Log in with Touch ID</button>
-		<p class="or">or use your passcode</p>
+		<p class="or" id="orpasscode">or use your passcode</p>
 	</div>
+	<div id="passcoderow">
 	<!-- Lets password managers save the passcode under a name -->
 	<input class="visually-hidden" type="text" name="username" value="Book library" autocomplete="username" tabindex="-1" aria-hidden="true" readonly/>
 	<label class="field" for="passcode">Passcode</label>
@@ -220,18 +225,29 @@
 		<input class="text code" type="password" id="confirm" inputmode="numeric" pattern="[0-9]*" maxlength="12" autocomplete="new-password"/>
 	</div>
 	<button class="primary" type="submit" id="loginbtn">Log in</button>
+	</div>
 	<div class="status" id="loginstatus" role="status"></div>
 </form>
 
 <form class="card" id="change" hidden novalidate>
-	<h1>Change passcode</h1>
-	<p class="sub">After changing it, run the Mac installer again so the sync uses the new one.</p>
+	<h1>Settings</h1>
+	<div id="passcodesettings">
+	<p class="sub">Change your passcode. Logged-in browsers stay logged in until it changes.</p>
 	<input class="visually-hidden" type="text" name="username" value="Book library" autocomplete="username" tabindex="-1" aria-hidden="true" readonly/>
 	<label class="field" for="current">Current passcode</label>
 	<input class="text code" type="password" id="current" inputmode="numeric" pattern="[0-9]*" maxlength="12" autocomplete="current-password"/>
 	<label class="field" for="newcode" style="margin-top:14px">New passcode</label>
 	<input class="text code" type="password" id="newcode" name="password" inputmode="numeric" pattern="[0-9]*" maxlength="12" autocomplete="new-password"/>
 	<button class="primary" type="submit" id="changebtn">Save</button>
+	</div>
+	<p class="sub" id="passcodeoff" hidden>You log in with Touch ID or Face ID. The passcode is turned off.</p>
+	<p class="or">Mac sync key</p>
+	<p class="hint" id="synchint" style="margin:0 0 12px">The Calibre sync on your Mac uses its own long key instead of your passcode.</p>
+	<div id="syncbox" hidden>
+		<input class="text" type="text" id="synckey" readonly spellcheck="false" style="font: 13px ui-monospace, Menlo, monospace"/>
+		<button class="secondary" type="button" id="copysync" style="margin-top:8px">Copy</button>
+	</div>
+	<button class="secondary" type="button" id="makesync">Create sync key</button>
 	<p class="or">Touch ID and Face ID</p>
 	<button class="secondary" type="button" id="addpasskey">Add a passkey on this device</button>
 	<button class="link" type="button" id="changecancel" style="margin-top:14px">Cancel</button>
@@ -252,7 +268,7 @@
 	</header>
 
 	<div class="banner" id="passkeybanner" hidden>
-		<span>Log in with Touch ID or Face ID next time?</span>
+		<span>Switch to Touch ID or Face ID? Your passcode will be turned off.</span>
 		<button class="send" type="button" id="bannerbtn">Set up</button>
 	</div>
 	<div class="status" id="passkeystatus" role="status"></div>
@@ -284,7 +300,13 @@
 		</div>
 	</section>
 
-	<footer class="foot"><a class="link" href="/">Send a file</a> · <button class="link" id="changelink" type="button">Passcode</button> · <button class="link" id="logout" type="button">Log out</button></footer>
+	<div class="selbar" id="selbar" hidden>
+		<span id="selcount"></span>
+		<button class="link" type="button" id="clearsel">Clear</button>
+		<button class="primary" type="button" id="sendsel">Send</button>
+	</div>
+
+	<footer class="foot"><a class="link" href="/">Send a file</a> · <button class="link" id="changelink" type="button">Settings</button> · <button class="link" id="logout" type="button">Log out</button></footer>
 	<div class="toast" id="status" role="status"></div>
 </main>
 
@@ -334,6 +356,7 @@ function formatSize(bytes) {
 // strings in place of binary fields.
 var passkeySupported = !!(window.PublicKeyCredential && navigator.credentials)
 var passkeyCount = 0
+var passcodeLogin = true
 
 function fromB64(text) {
 	var b = atob(text.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((text.length + 3) % 4))
@@ -406,7 +429,8 @@ function addPasskey(statusEl_, done) {
 			request('POST', '/api/library/passkey', { action: 'register', response: response }, function (code2, data) {
 				if (code2 === 200) {
 					passkeyCount++
-					setStatus(statusEl_, 'success', 'Passkey saved. Next time, log in with Touch ID or Face ID.')
+					passcodeLogin = false
+					setStatus(statusEl_, 'success', 'Passkey saved. From now on you log in with Touch ID or Face ID, and the passcode is turned off.')
 					if (done) done()
 				} else {
 					setStatus(statusEl_, 'error', data.error || 'Could not save the passkey')
@@ -440,6 +464,8 @@ function showLogin(setup) {
 	loginForm.hidden = false
 	document.getElementById('confirmrow').hidden = !setupMode
 	document.getElementById('passkeyrow').hidden = setupMode || !passkeySupported || passkeyCount === 0
+	document.getElementById('passcoderow').hidden = !setupMode && !passcodeLogin
+	document.getElementById('orpasscode').hidden = !passcodeLogin
 	document.getElementById('loginsub').textContent = setupMode ? 'Choose a passcode of 6 to 12 digits. Your browser can save it for you.' : 'Your Calibre books.'
 	document.getElementById('loginbtn').textContent = setupMode ? 'Save passcode' : 'Log in'
 	document.getElementById('passcode').autocomplete = setupMode ? 'new-password' : 'current-password'
@@ -473,7 +499,30 @@ loginForm.addEventListener('submit', function (e) {
 	})
 })
 
+document.getElementById('makesync').addEventListener('click', function () {
+	request('POST', '/api/library/login', { syncKey: true }, function (code, data) {
+		if (code !== 200) { setStatus(document.getElementById('changestatus'), 'error', data.error || 'Could not create a key'); return }
+		document.getElementById('syncbox').hidden = false
+		document.getElementById('synckey').value = data.syncKey
+		document.getElementById('synckey').select()
+		document.getElementById('makesync').textContent = 'Replace sync key'
+		document.getElementById('synchint').textContent = 'Copy this now; it won’t be shown again. Paste it when the Mac installer asks. Making a new key stops the old one.'
+	})
+})
+
+document.getElementById('copysync').addEventListener('click', function () {
+	var input = document.getElementById('synckey')
+	input.select()
+	try { navigator.clipboard.writeText(input.value) } catch (err) { document.execCommand('copy') }
+	document.getElementById('copysync').textContent = 'Copied'
+})
+
 document.getElementById('changelink').addEventListener('click', function () {
+	request('GET', '/api/library/login', null, function (c, info) {
+		if (info.syncKey && document.getElementById('syncbox').hidden) document.getElementById('makesync').textContent = 'Replace sync key'
+		document.getElementById('passcodesettings').hidden = info.passcodeLogin === false
+		document.getElementById('passcodeoff').hidden = info.passcodeLogin !== false
+	})
 	libraryEl.hidden = true
 	changeForm.hidden = false
 	document.getElementById('current').focus()
@@ -519,6 +568,7 @@ function load() {
 		if (code === 401) {
 			request('GET', '/api/library/login', null, function (c, info) {
 				passkeyCount = info.passkeys || 0
+				passcodeLogin = info.passcodeLogin !== false
 				showLogin(c === 200 && info.passcodeSet === false)
 			})
 			return
@@ -619,7 +669,7 @@ var columns = [
 ]
 var sortKey = 'added'
 var sortDesc = true
-var selectedId = null
+var selected = {}  // book id -> true, for sending several at once
 
 function renderTable() {
 	var head = document.getElementById('headrow')
@@ -651,7 +701,7 @@ function renderTable() {
 	body.textContent = ''
 	shown.forEach(function (book) {
 		var tr = document.createElement('tr')
-		if (book.id === selectedId) tr.className = 'selected'
+		if (selected[book.id]) tr.className = 'selected'
 		columns.forEach(function (c) {
 			var td = document.createElement('td')
 			td.className = c.cls
@@ -663,14 +713,55 @@ function renderTable() {
 		td.appendChild(sendButton(book, true))
 		tr.appendChild(td)
 		tr.addEventListener('click', function () {
-			selectedId = book.id
-			var prev = body.querySelector('tr.selected')
-			if (prev) prev.classList.remove('selected')
-			tr.classList.add('selected')
+			if (selected[book.id]) delete selected[book.id]
+			else selected[book.id] = true
+			tr.classList.toggle('selected', !!selected[book.id])
+			updateSelection()
 		})
 		body.appendChild(tr)
 	})
 	document.getElementById('tablecount').textContent = shown.length === books.length ? books.length + ' books' : shown.length + ' of ' + books.length
+}
+
+function selectedBooks() {
+	return books.filter(function (b) { return selected[b.id] })
+}
+
+function updateSelection() {
+	var n = selectedBooks().length
+	var bar = document.getElementById('selbar')
+	bar.hidden = n === 0
+	document.getElementById('selcount').textContent = n + (n === 1 ? ' book selected' : ' books selected')
+	document.getElementById('sendsel').textContent = n === 1 ? 'Send 1 book' : 'Send ' + n + ' books'
+}
+
+document.getElementById('clearsel').addEventListener('click', function () {
+	selected = {}
+	renderTable()
+	updateSelection()
+})
+
+document.getElementById('sendsel').addEventListener('click', function () {
+	var list = selectedBooks()
+	if (!device) {
+		pendingBook = list
+		openConnect(true)
+		keyhint.className = 'hint'
+		keyhint.textContent = 'Enter the key your e-reader shows, and the ' + list.length + ' selected books will send.'
+		return
+	}
+	sendMany(list)
+})
+
+// Sends books one after another, so the e-reader lists each one
+function sendMany(list) {
+	selected = {}
+	updateSelection()
+	var i = 0
+	function next() {
+		if (i < list.length) send(list[i++], next)
+	}
+	next()
 }
 
 filterEl.addEventListener('input', function () {
@@ -706,7 +797,7 @@ function openConnect(open) {
 
 pill.addEventListener('click', function () { openConnect(popover.hidden) })
 document.addEventListener('click', function (e) {
-	if (!popover.hidden && !popover.contains(e.target) && !pill.contains(e.target) && !(e.target.classList && e.target.classList.contains('send'))) openConnect(false)
+	if (!popover.hidden && !popover.contains(e.target) && !pill.contains(e.target) && !(e.target.classList && e.target.classList.contains('send')) && e.target.id !== 'sendsel') openConnect(false)
 })
 
 function setDevice(found, key) {
@@ -744,7 +835,8 @@ function lookUpKey() {
 			openConnect(false)
 			var book = pendingBook
 			pendingBook = null
-			send(book)
+			if (Array.isArray(book)) sendMany(book)
+			else send(book)
 		} else {
 			setTimeout(function () { openConnect(false) }, 700)
 		}
@@ -766,7 +858,7 @@ function refresh() {
 	if (!tableEl.hidden) renderTable()
 }
 
-function send(book) {
+function send(book, done) {
 	if (!device) {
 		pendingBook = book
 		openConnect(true)
@@ -779,7 +871,9 @@ function send(book) {
 	request('POST', '/api/library/send', { id: book.id, key: lookedUpKey }, function (code, data) {
 		if (code === 200) {
 			sendState[book.id] = 'sent'
-			toast('success', data.message, true)
+			var reader = device === 'kobo' ? 'Kobo' : (device === 'kindle' ? 'Kindle' : 'e-reader')
+			toast('success', '“' + book.title + '” sent. ' + (data.waiting > 1 ? data.waiting + ' books are waiting on your ' + reader + '. Tap each one there to download it.' : 'Tap it on your ' + reader + ' to download it.'))
+			if (done) done()
 		} else if (code === 401) {
 			delete sendState[book.id]
 			showLogin()

@@ -23,8 +23,8 @@
 	</div>
 
 	<div id="downloads">
-		<div class="label">Ready to download</div>
-		<a id="downloadlink" class="downloadlink"></a>
+		<div class="label" id="downloadlabel">Ready to download</div>
+		<div id="downloadlist"></div>
 	</div>
 
 	<div class="hint">
@@ -40,7 +40,9 @@
 var keyOutput = document.getElementById('keyoutput')
 var keyGenBtn = document.getElementById('keygen')
 var downloads = document.getElementById('downloads')
-var downloadlink = document.getElementById('downloadlink')
+var downloadlist = document.getElementById('downloadlist')
+var downloadlabel = document.getElementById('downloadlabel')
+var shownFiles = ''
 var siteurl = document.getElementById('siteurl')
 var key = null
 var pollTimer = null
@@ -79,14 +81,29 @@ function pollFile () {
 			keyOutput.textContent = '––––'
 			downloads.style.display = 'none'
 		}
-		if (data.file) {
-			downloads.style.display = 'block'
-			downloadlink.textContent = data.file.name
-			downloadlink.href = '/' + encodeURIComponent(data.file.name) + "?key=" + key
-		} else {
-			downloads.style.display = 'none'
-		}
+		showFiles(data.files || (data.file ? [data.file] : []))
 	})
+}
+
+// One link per book; the e-reader downloads one file per tap
+function showFiles (files) {
+	var signature = key + JSON.stringify(files)
+	if (signature === shownFiles) return
+	shownFiles = signature
+	downloadlist.innerHTML = ''
+	if (!files.length) {
+		downloads.style.display = 'none'
+		return
+	}
+	downloads.style.display = 'block'
+	downloadlabel.textContent = files.length === 1 ? 'Ready to download' : files.length + ' books ready. Tap each to download'
+	for (var i = 0; i < files.length; i++) {
+		var link = document.createElement('a')
+		link.className = 'downloadlink'
+		link.textContent = files[i].name + (files[i].downloaded ? '  \u2713' : '')
+		link.href = '/' + encodeURIComponent(files[i].name) + '?key=' + key
+		downloadlist.appendChild(link)
+	}
 }
 
 function generateKey () {
@@ -98,14 +115,13 @@ function generateKey () {
 		if (x.responseText !== 'error' && x.status === 200) {
 			key = x.responseText
 			keyOutput.textContent = key
-			downloadlink.href = ''
+			shownFiles = ''
 			pollStarted = Date.now()
 			slowPoll = false
 			startPolling(5 * 1000)
 		} else {
 			key = null
 			keyOutput.textContent = '––––'
-			downloadlink.href = ''
 		}
 		keyGenBtn.blur()
 	})

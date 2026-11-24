@@ -1,13 +1,13 @@
 const { getKey, normalizeKey, readChunks, markDownloaded } = require('../lib/store')
 
-// The e-reader downloads /<filename>?key=<KEY>; stream the book out of Postgres.
+// The e-reader downloads /<filename>?key=<KEY>; stream that book out of Postgres.
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
   const key = normalizeKey(req.query.key)
   const filename = req.query.filename
   const info = await getKey(key)
-  const file = info && info.file
-  if (!file || file.name !== filename) {
+  const file = info && info.files.find((f) => f.name === filename)
+  if (!file) {
     res.status(404).send('Not found')
     return
   }

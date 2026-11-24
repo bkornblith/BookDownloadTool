@@ -14,10 +14,11 @@ module.exports = async (req, res) => {
     res.status(204).end()
     return
   }
-  const file = info.file
+  const files = info.files.map((f) => ({ name: f.name, downloaded: f.downloaded }))
   res.json({
     alive: new Date(),
-    file: file ? { name: file.name } : null
+    files,
+    file: files.length ? files[files.length - 1] : null  // the newest, for older pages
   })
   // The e-reader polls this, so it doubles as the trigger for deleting books
   // a few minutes after they were downloaded.
