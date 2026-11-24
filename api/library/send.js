@@ -54,7 +54,12 @@ module.exports = async (req, res) => {
       contentType: kepub ? TYPE_EPUB : (contentTypes[extensionOf(book.filename)] || 'application/octet-stream'),
       convert: { kepubify: !kepub, kindlegen: true }
     })
-    res.status(result.success ? 200 : 400).json(result.success ? { message: result.message } : { error: result.message })
+    if (!result.success) {
+      res.status(400).json({ error: result.message })
+      return
+    }
+    const after = await getKey(key)
+    res.json({ message: result.message, waiting: after ? after.files.filter((f) => !f.downloaded).length : 1 })
   } finally {
     await cleanupSometimes()
     fs.rmSync(workdir, { recursive: true, force: true })
