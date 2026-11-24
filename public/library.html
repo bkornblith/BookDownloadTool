@@ -110,6 +110,9 @@
 		.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; padding: 0; }
 		input.code { font: 600 22px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.3em; text-align: center; }
 		#login.card, #change.card { max-width: 380px; margin-top: 12vh; }
+		.or { margin: 18px 0 14px; font-size: 13px; color: var(--muted); text-align: center; }
+		.secondary { width: 100%; padding: 12px; font: inherit; font-size: 15px; font-weight: 600; color: var(--accent); background: var(--accent-soft); border: none; border-radius: 12px; cursor: pointer; }
+		.banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); font-size: 14px; }
 		.status { margin-top: 14px; padding: 12px 14px; border-radius: 12px; font-size: 14px; }
 		.status:empty { display: none; }
 		.status.info { background: var(--accent-soft); }
@@ -148,6 +151,10 @@
 <form class="card" id="login" hidden novalidate>
 	<h1>Library</h1>
 	<p class="sub" id="loginsub">Your Calibre books.</p>
+	<div id="passkeyrow" hidden>
+		<button class="primary" type="button" id="passkeybtn" style="margin-top:0">Log in with Touch ID</button>
+		<p class="or">or use your passcode</p>
+	</div>
 	<!-- Lets password managers save the passcode under a name -->
 	<input class="visually-hidden" type="text" name="username" value="Book library" autocomplete="username" tabindex="-1" aria-hidden="true" readonly/>
 	<label class="field" for="passcode">Passcode</label>
@@ -169,6 +176,8 @@
 	<label class="field" for="newcode" style="margin-top:14px">New passcode</label>
 	<input class="text code" type="password" id="newcode" name="password" inputmode="numeric" pattern="[0-9]*" maxlength="12" autocomplete="new-password"/>
 	<button class="primary" type="submit" id="changebtn">Save</button>
+	<p class="or">Touch ID and Face ID</p>
+	<button class="secondary" type="button" id="addpasskey">Add a passkey on this device</button>
 	<button class="link" type="button" id="changecancel" style="margin-top:14px">Cancel</button>
 	<div class="status" id="changestatus" role="status"></div>
 </form>
@@ -184,6 +193,10 @@
 	<input class="text" type="text" id="keyinput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="••••" maxlength="4"/>
 	<div id="keyhint" class="keyhint"></div>
 
+	<div class="banner" id="passkeybanner" hidden>
+		<span>Log in with Touch ID or Face ID next time?</span>
+		<button class="send" type="button" id="bannerbtn">Set up</button>
+	</div>
 	<input class="text" type="search" id="search" placeholder="Search title, author or series" autocomplete="off"/>
 	<div class="status" id="status" role="status"></div>
 	<div class="count" id="count"></div>
@@ -229,6 +242,106 @@ function formatSize(bytes) {
 
 // Login
 
+// Passkeys: WebAuthn options and responses travel as JSON with base64url
+// strings in place of binary fields.
+var passkeySupported = !!(window.PublicKeyCredential && navigator.credentials)
+var passkeyCount = 0
+
+function fromB64(text) {
+	var b = atob(text.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((text.length + 3) % 4))
+	var out = new Uint8Array(b.length)
+	for (var i = 0; i < b.length; i++) out[i] = b.charCodeAt(i)
+	return out.buffer
+}
+
+function toB64(buffer) {
+	if (!buffer) return undefined
+	var bytes = new Uint8Array(buffer), b = ''
+	for (var i = 0; i < bytes.length; i++) b += String.fromCharCode(bytes[i])
+	return btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function credentialIds(list) {
+	return (list || []).map(function (c) { return { id: fromB64(c.id), type: c.type, transports: c.transports } })
+}
+
+function passkeyError(err, fallback) {
+	if (err && err.name === 'NotAllowedError') return 'Cancelled'
+	if (err && err.name === 'InvalidStateError') return 'This device already has a passkey for the library'
+	return (err && err.message) || fallback
+}
+
+function passkeyLogin(statusEl_) {
+	request('POST', '/api/library/passkey', { action: 'loginOptions' }, function (code, options) {
+		if (code !== 200) { setStatus(statusEl_, 'error', options.error || 'Could not start'); return }
+		options.challenge = fromB64(options.challenge)
+		options.allowCredentials = credentialIds(options.allowCredentials)
+		navigator.credentials.get({ publicKey: options }).then(function (cred) {
+			var response = {
+				id: cred.id, rawId: toB64(cred.rawId), type: cred.type,
+				clientExtensionResults: cred.getClientExtensionResults(),
+				authenticatorAttachment: cred.authenticatorAttachment || undefined,
+				response: {
+					clientDataJSON: toB64(cred.response.clientDataJSON),
+					authenticatorData: toB64(cred.response.authenticatorData),
+					signature: toB64(cred.response.signature),
+					userHandle: toB64(cred.response.userHandle)
+				}
+			}
+			request('POST', '/api/library/passkey', { action: 'login', response: response }, function (code2, data) {
+				if (code2 === 200) { setStatus(statusEl_, '', ''); load() }
+				else setStatus(statusEl_, 'error', data.error || 'Could not log in')
+			})
+		}).catch(function (err) {
+			setStatus(statusEl_, 'error', passkeyError(err, 'Could not log in'))
+		})
+	})
+}
+
+function addPasskey(statusEl_, done) {
+	request('POST', '/api/library/passkey', { action: 'registerOptions' }, function (code, options) {
+		if (code !== 200) { setStatus(statusEl_, 'error', options.error || 'Could not start'); return }
+		options.challenge = fromB64(options.challenge)
+		options.user.id = fromB64(options.user.id)
+		options.excludeCredentials = credentialIds(options.excludeCredentials)
+		navigator.credentials.create({ publicKey: options }).then(function (cred) {
+			var response = {
+				id: cred.id, rawId: toB64(cred.rawId), type: cred.type,
+				clientExtensionResults: cred.getClientExtensionResults(),
+				authenticatorAttachment: cred.authenticatorAttachment || undefined,
+				response: {
+					clientDataJSON: toB64(cred.response.clientDataJSON),
+					attestationObject: toB64(cred.response.attestationObject),
+					transports: cred.response.getTransports ? cred.response.getTransports() : undefined
+				}
+			}
+			request('POST', '/api/library/passkey', { action: 'register', response: response }, function (code2, data) {
+				if (code2 === 200) {
+					passkeyCount++
+					setStatus(statusEl_, 'success', 'Passkey saved. Next time, log in with Touch ID or Face ID.')
+					if (done) done()
+				} else {
+					setStatus(statusEl_, 'error', data.error || 'Could not save the passkey')
+				}
+			})
+		}).catch(function (err) {
+			setStatus(statusEl_, 'error', passkeyError(err, 'Could not save the passkey'))
+		})
+	})
+}
+
+if (/iPhone|iPad/.test(navigator.userAgent)) document.getElementById('passkeybtn').textContent = 'Log in with Face ID'
+
+document.getElementById('passkeybtn').addEventListener('click', function () {
+	passkeyLogin(document.getElementById('loginstatus'))
+})
+document.getElementById('bannerbtn').addEventListener('click', function () {
+	addPasskey(statusEl, function () { document.getElementById('passkeybanner').hidden = true })
+})
+document.getElementById('addpasskey').addEventListener('click', function () {
+	addPasskey(document.getElementById('changestatus'))
+})
+
 var setupMode = false
 var changeForm = document.getElementById('change')
 
@@ -238,10 +351,11 @@ function showLogin(setup) {
 	changeForm.hidden = true
 	loginForm.hidden = false
 	document.getElementById('confirmrow').hidden = !setupMode
+	document.getElementById('passkeyrow').hidden = setupMode || !passkeySupported || passkeyCount === 0
 	document.getElementById('loginsub').textContent = setupMode ? 'Choose a passcode of 6 to 12 digits. Your browser can save it for you.' : 'Your Calibre books.'
 	document.getElementById('loginbtn').textContent = setupMode ? 'Save passcode' : 'Log in'
 	document.getElementById('passcode').autocomplete = setupMode ? 'new-password' : 'current-password'
-	document.getElementById('passcode').focus()
+	if (document.getElementById('passkeyrow').hidden) document.getElementById('passcode').focus()
 }
 
 loginForm.addEventListener('submit', function (e) {
@@ -316,12 +430,17 @@ function load() {
 	request('GET', '/api/library/books', null, function (code, data) {
 		if (code === 401) {
 			request('GET', '/api/library/login', null, function (c, info) {
+				passkeyCount = info.passkeys || 0
 				showLogin(c === 200 && info.passcodeSet === false)
 			})
 			return
 		}
 		loginForm.hidden = true
 		libraryEl.hidden = false
+		request('GET', '/api/library/login', null, function (c, info) {
+			passkeyCount = info.passkeys || 0
+			document.getElementById('passkeybanner').hidden = !passkeySupported || passkeyCount > 0
+		})
 		if (code !== 200) {
 			setStatus(statusEl, 'error', data.error || 'Could not load the library')
 			return

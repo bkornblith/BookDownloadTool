@@ -8,6 +8,7 @@
   "author": "djazz",
   "license": "MIT",
   "dependencies": {
+    "@simplewebauthn/server": "^14.1.0",
     "@vercel/functions": "^3.10.5",
     "aws4fetch": "^1.0.20",
     "file-type": "^16.5.4",

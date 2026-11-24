@@ -1,6 +1,7 @@
+const passkeys = require('../../lib/passkeys')
 const { validPasscode, storedHash, checkPasscode, setPasscode, setSession, clearSession, isLoggedIn } = require('../../lib/auth')
 
-// GET                          { loggedIn, passcodeSet }
+// GET                          { loggedIn, passcodeSet, passkeys }
 // POST {passcode}              logs in
 // POST {setup: passcode}       sets the first passcode (only while none is set)
 // POST {current, change}       changes it (logged in, with the current passcode)
@@ -9,7 +10,7 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
   try {
     if (req.method === 'GET') {
-      res.json({ loggedIn: await isLoggedIn(req), passcodeSet: !!(await storedHash()) })
+      res.json({ loggedIn: await isLoggedIn(req), passcodeSet: !!(await storedHash()), passkeys: await passkeys.count() })
       return
     }
     if (req.method !== 'POST') {
