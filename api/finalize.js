@@ -91,7 +91,7 @@ module.exports = async (req, res) => {
 
     // Logged in: keep a copy so the next Calibre sync adds it to the library
     let saved = false
-    if (isLoggedIn(req)) {
+    if (await isLoggedIn(req)) {
       try {
         await library.addToInbox(infile, filename)
         saved = true
